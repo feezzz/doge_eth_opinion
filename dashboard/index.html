@@ -222,7 +222,7 @@ body{font-size:15px;line-height:1.58}
 
 
 
-/* ===== V5.1 关键位优先版：降低噪音，把价格层级放到第一视觉中心 ===== */
+/* ===== V5.2 试仓机会版：降低噪音，把价格层级放到第一视觉中心 ===== */
 .quick-command{padding:18px 20px 20px;background:linear-gradient(145deg,#14170f 0%,#10161c 55%,#0d1319 100%);border-color:#34301d}
 .quick-command:after{opacity:.55}
 .quick-head{padding-bottom:4px}
@@ -266,12 +266,30 @@ body{font-size:15px;line-height:1.58}
 @media(max-width:900px){.key-focus-grid{grid-template-columns:1fr}.key-focus-card{min-height:105px}.key-focus-card strong,.key-focus-card.current-focus strong{font-size:30px!important}.metric-grid{grid-template-columns:1fr}.metric-grid>.metric-panel:first-child{grid-column:auto}.level{grid-template-columns:70px 100px minmax(0,1fr)}.level-dist{grid-column:2/-1;padding:0;margin-top:-3px}.compact-radar{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.compact-radar{grid-template-columns:1fr}.level{grid-template-columns:70px 92px minmax(0,1fr)}.level.focus-level .price{font-size:20px}}
 
+
+/* ===== V5.2 试仓机会版：把“能不能试”放在等待之前 ===== */
+.execution-opportunity{margin:0 0 16px;border:1px solid #3d4650;border-radius:15px;background:linear-gradient(135deg,#10161c,#0c1218);box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:minmax(280px,.78fr) minmax(0,1.55fr)}
+.exec-status{padding:17px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;position:relative}
+.exec-status:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#7b8794}
+.exec-kicker{font-size:10px;letter-spacing:1.3px;color:var(--dim);margin-bottom:7px}.exec-status strong{font-size:24px;line-height:1.25;letter-spacing:-.4px;color:#d8e0e7}.exec-status p{margin-top:7px;font-size:12px;line-height:1.65;color:#7f8c99}
+.exec-grid{display:grid;grid-template-columns:1.15fr .72fr 1.25fr 1fr .82fr}.exec-cell{padding:14px 13px;border-right:1px solid #1b242d;min-width:0}.exec-cell:last-child{border-right:0}.exec-cell b{display:block;font-size:9px;color:var(--dim);margin-bottom:7px;font-weight:600}.exec-cell strong{display:block;font-size:13px;line-height:1.45;color:#c9d3dd;overflow-wrap:anywhere}.exec-cell.primary strong{font:800 23px/1.2 Consolas,monospace;color:#f0c94e;letter-spacing:-.5px}.exec-cell span{display:block;font-size:9px;color:#687684;margin-top:5px;line-height:1.35}
+.execution-opportunity.long{border-color:#23613e;background:linear-gradient(135deg,#0b1b13,#0c1218)}.execution-opportunity.long .exec-status:before{background:var(--green)}.execution-opportunity.long .exec-status strong,.execution-opportunity.long .exec-cell.primary strong{color:#66dfa0}
+.execution-opportunity.short{border-color:#6a2d32;background:linear-gradient(135deg,#211012,#0c1218)}.execution-opportunity.short .exec-status:before{background:var(--red)}.execution-opportunity.short .exec-status strong,.execution-opportunity.short .exec-cell.primary strong{color:#ff7e86}
+.execution-opportunity.near{border-color:#655515;background:linear-gradient(135deg,#1b1709,#0c1218)}.execution-opportunity.near .exec-status:before{background:var(--gold)}.execution-opportunity.near .exec-status strong,.execution-opportunity.near .exec-cell.primary strong{color:#f2ca4f}
+.execution-opportunity.active{box-shadow:0 0 0 1px rgba(255,255,255,.025),0 12px 34px rgba(0,0,0,.28)}
+.execution-opportunity.active .exec-status strong{font-size:28px}.execution-opportunity.active .exec-cell.primary{background:rgba(255,255,255,.018)}
+.quick-action.try-long strong{color:var(--green)}.quick-action.try-short strong{color:var(--red)}.quick-action.near strong{color:var(--gold)}
+.plan-title .plan-status.ready-long{color:var(--green);font-weight:800}.plan-title .plan-status.ready-short{color:var(--red);font-weight:800}
+@media(max-width:1450px){.execution-opportunity{grid-template-columns:1fr}.exec-status{border-right:0;border-bottom:1px solid var(--line)}.exec-grid{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:1050px){.exec-grid{grid-template-columns:1fr 1fr}.exec-cell{border-bottom:1px solid #1b242d}.exec-cell:nth-child(2n){border-right:0}.exec-cell:last-child{grid-column:1/-1;border-bottom:0}}
+@media(max-width:620px){.exec-grid{grid-template-columns:1fr}.exec-cell,.exec-cell:nth-child(n){border-right:0;border-bottom:1px solid #1b242d}.exec-cell:last-child{grid-column:auto;border-bottom:0}.exec-status strong{font-size:21px}.execution-opportunity.active .exec-status strong{font-size:23px}}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V5.1 关键位优先版</small></div></div>
+    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V5.2 试仓机会版</small></div></div>
     <div class="live-strip"><span class="live-dot"></span><span class="live-symbol" id="liveSymbol">ETH · ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
     <div class="top-meta"><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
   </header>
@@ -279,7 +297,7 @@ body{font-size:15px;line-height:1.58}
     <aside class="sidebar">
       <div class="side-title">日期</div><ul class="date-list" id="dateList"></ul>
       <div class="side-title">品种</div><div class="sym-filters" id="symFilters"></div>
-      <div class="side-note">第一屏优先看三件事：<br><b style="color:#e7c44d">上方关键位</b><br><b style="color:#f5d86e">当前价格</b><br><b style="color:#7de2a5">下方关键位</b><br><br>价位没到，先不动；触发确认后再看预案。</div>
+      <div class="side-note">第一屏先看：<br><b style="color:#f5d86e">当前有没有试仓机会</b><br><b style="color:#7de2a5">试仓区在哪里</b><br><b style="color:#e7c44d">到位要满足什么条件</b><br><br>“等待”只代表还没到位；一旦进入明确试仓区，看板会直接提示。</div>
     </aside>
     <main class="main">
       <section class="quick-command" id="quickCommand">
@@ -312,7 +330,21 @@ body{font-size:15px;line-height:1.58}
           </div>
         </div>
       </section>
-      <div class="no-trade-banner" id="noTradeBanner">当前没有高质量触发，今日此刻无需操作。继续等位置和收盘确认即可。</div>
+      <section class="execution-opportunity wait" id="executionOpportunity">
+        <div class="exec-status">
+          <span class="exec-kicker">CURRENT SETUP / 当前执行机会</span>
+          <strong id="execHeadline">正在判断是否存在试仓机会</strong>
+          <p id="execReason">优先读取最新观点里的“轻仓试多 / 尝试短空 / 回踩可接 / 到位可空”等明确执行语句。</p>
+        </div>
+        <div class="exec-grid">
+          <div class="exec-cell primary"><b>试仓区</b><strong id="execZone">--</strong><span id="execZoneDistance">--</span></div>
+          <div class="exec-cell"><b>方向</b><strong id="execDirection">--</strong><span id="execMode">--</span></div>
+          <div class="exec-cell"><b>到位条件</b><strong id="execCondition">--</strong><span>不是到价就无脑进</span></div>
+          <div class="exec-cell"><b>失效 / 止损</b><strong id="execInvalid">--</strong><span>来源于最新观点</span></div>
+          <div class="exec-cell"><b>第一目标</b><strong id="execTarget">--</strong><span id="execRRHint">--</span></div>
+        </div>
+      </section>
+      <div class="no-trade-banner" id="noTradeBanner">当前没有明确试仓机会；若分析给出了试仓区，会优先显示“等待到位”，而不是泛化成等待信号。</div>
       <div class="hero-grid">
         <section class="panel decision">
           <div class="decision-head">
@@ -391,7 +423,7 @@ body{font-size:15px;line-height:1.58}
     </main>
   </div>
 </div>
-<script src="data.js?v=20260812163559"></script>
+<script src="data.js?v=20260812180212"></script>
 <script>
 (function(){
 'use strict';
@@ -415,20 +447,79 @@ function compact(s,n=160){s=String(s||'').replace(/\s+/g,' ').trim();return s.le
 function latestEntry(date,sym){const d=DATA.days[date];if(!d||d.type!=='log')return null;const a=d.entries.filter(e=>!sym||e.symbol===sym);return a.length?a[a.length-1]:null}
 function allEntries(date,sym){const d=DATA.days[date];if(!d||d.type!=='log')return [];return d.entries.filter(e=>!sym||e.symbol===sym)}
 function splitSentences(t){return String(t||'').replace(/\n+/g,' ').split(/[。！？!?；;]/).map(x=>x.trim()).filter(Boolean)}
+function splitClauses(t){return String(t||'').replace(/\n+/g,' ').split(/[，,。！？!?；;]/).map(x=>x.trim()).filter(Boolean)}
 function findSentence(t,keys,fallback=''){const s=splitSentences(t);for(const k of keys){const x=s.find(v=>v.includes(k));if(x)return compact(x,220)}return fallback}
 function scoreKeywords(text,pos,neg){let p=0,n=0;pos.forEach(k=>{if(text.includes(k))p++});neg.forEach(k=>{if(text.includes(k))n++});return p-n}
+
+function normalizeZone(a,b){a=+a;b=b===undefined||b===null?a:+b;if(!Number.isFinite(a)||!Number.isFinite(b))return null;return {lo:Math.min(a,b),hi:Math.max(a,b)}}
+function zoneText(z){if(!z)return '--';return Math.abs(z.hi-z.lo)<1e-9?formatPrice(z.lo):`${formatPrice(z.lo)} – ${formatPrice(z.hi)}`}
+function extractZoneFromClause(c){
+  let m=c.match(/(\d{2,5}(?:\.\d+)?)\s*(?:-|~|—|–|至|到)\s*(\d{2,5}(?:\.\d+)?)/);if(m)return normalizeZone(m[1],m[2]);
+  m=c.match(/(?:回踩|反弹到|反抽到|到|附近|盯|看|守|站稳|跌破|突破)?\s*(\d{2,5}(?:\.\d+)?)\s*(?:附近|一带|这个位置|不破|上方|下方|左右)?/);if(m)return normalizeZone(m[1]);
+  return null;
+}
+function extractStopTarget(text,dir,zone){
+  const clauses=splitClauses(text);let invalid=null,target=null,invalidText='',targetText='';
+  const stopKeys=['止损','失效','破了就','破了这波','守不住','站不回','上方重新转强'];
+  for(const c of clauses){
+    if(!invalid&&sentenceHasAny(c,stopKeys)){const z=extractZoneFromClause(c);if(z){invalid=dir==='long'?z.lo:z.hi;invalidText=c}}
+  }
+  const targetKeys=dir==='long'?['目标','看','摸','冲','上看']:['目标','看','下看','回踩'];
+  for(const c of clauses){
+    if(!sentenceHasAny(c,targetKeys))continue;const nums=[...c.matchAll(/(?<![\dA-Za-z])(\d{2,5}(?:\.\d+)?)(?![\dA-Za-z%])/g)].map(x=>+x[1]).filter(Number.isFinite);
+    for(const v of nums){if(!zone)continue;if(dir==='long'&&v>zone.hi){target=v;targetText=c;break}if(dir==='short'&&v<zone.lo){target=v;targetText=c;break}}
+    if(target)break;
+  }
+  return {invalid,target,invalidText,targetText};
+}
+function extractTradeSetup(text,price){
+  const clauses=splitClauses(text);const candidates=[];
+  const longPos=/轻仓试多|试多|考虑接|考虑做多|低多|接多|再接|接货|上车点|回踩.*(?:接|上车)|可以.*多|可.*多/;
+  const shortPos=/尝试短空|短空|高空|考虑做空|考虑空|做空|可以.*空|可.*空/;
+  const longNeg=/不追多|不抢多|不做多|别.*抄底|别急着接/;const shortNeg=/不追空|不做空/;
+  for(let i=0;i<clauses.length;i++){
+    const c=clauses[i],ctx=[clauses[i-1],c,clauses[i+1]].filter(Boolean).join('，');
+    let dir=null;if(longPos.test(c)&&!longNeg.test(c))dir='long';if(shortPos.test(c)&&!shortNeg.test(c))dir='short';if(!dir)continue;
+    let zone=extractZoneFromClause(c)||extractZoneFromClause(clauses[i-1]||'')||extractZoneFromClause(clauses[i+1]||'');if(!zone)continue;
+    if(price&&(zone.lo<price*.5||zone.hi>price*1.5))continue;
+    let cond='到位后观察结构';
+    if(/不破|守住/.test(ctx))cond='到位后不破 / 守住';
+    else if(/不过|上不去|站不上/.test(ctx))cond='到位后受阻 / 站不上';
+    else if(/量跟不上|缩量/.test(ctx))cond='到位后量能跟不上';
+    else if(/回踩/.test(ctx))cond='回踩到位并确认';
+    else if(/反抽/.test(ctx))cond='反抽到位并确认';
+    else if(/站稳|突破/.test(ctx))cond='突破并确认';
+    const explicit=/轻仓|试多|尝试|考虑|高空|低多/.test(c)?3:2;
+    candidates.push({dir,zone,condition:cond,source:c,context:ctx,score:explicit});
+  }
+  if(!candidates.length)return {dir:null,status:'none',zone:null};
+  if(price)candidates.sort((a,b)=>{const da=price<a.zone.lo?(a.zone.lo-price)/price:price>a.zone.hi?(price-a.zone.hi)/price:0;const db=price<b.zone.lo?(b.zone.lo-price)/price:price>b.zone.hi?(price-b.zone.hi)/price:0;return da-db||b.score-a.score});
+  else candidates.sort((a,b)=>b.score-a.score);
+  const x=candidates[0];let status='waiting',distancePct=null;
+  if(price){if(price>=x.zone.lo&&price<=x.zone.hi){status='in-zone';distancePct=0}else{const edge=price<x.zone.lo?x.zone.lo:x.zone.hi;distancePct=Math.abs(edge-price)/price*100;status=distancePct<=.35?'near':'waiting'}}
+  const st=extractStopTarget(text,x.dir,x.zone);return {...x,status,distancePct,...st};
+}
+function tradeSetupDistance(setup,price){if(!setup||!setup.zone||!price)return '--';if(price>=setup.zone.lo&&price<=setup.zone.hi)return '当前已进入试仓区';const edge=price<setup.zone.lo?setup.zone.lo:setup.zone.hi;return `距离试仓区 ${fmtDist(edge,price)}`}
+function setupAction(setup){if(!setup||!setup.dir)return {label:'暂无明确试仓',cls:'wait'};if(setup.status==='in-zone')return {label:setup.dir==='long'?'可尝试轻仓做多':'可尝试轻仓做空',cls:setup.dir==='long'?'try-long':'try-short'};if(setup.status==='near')return {label:setup.dir==='long'?'接近多头试仓区':'接近空头试仓区',cls:'near'};return {label:setup.dir==='long'?'等待到多头试仓区':'等待到空头试仓区',cls:'wait'}}
 function deriveDecision(e){
-  if(!e)return {state:'暂无数据',cls:'state-neutral',bias:'结构判断 --',summary:'当前日期没有可读取的分析。',trigger:'--',watch:'--',avoid:'--'};
+  if(!e)return {state:'暂无数据',cls:'state-neutral',bias:'结构判断 --',summary:'当前日期没有可读取的分析。',trigger:'--',watch:'--',avoid:'--',longScore:0};
   const t=(e.summary||'')+' '+(e.body||'');
-  const wait=/不动手|等方向|宁可空仓|位置不到|不上不下|没方向|别手痒|等.*确认|中间不动手|别急着动手/.test(t);
+  const setup=extractTradeSetup(t,lastPrice);
+  const hardWait=/宁可空仓|位置不到不动手|中间位置不动手|中间不动手|不上不下.*不动手|没方向|等方向/.test(t);
+  const softWait=/别急着动手|等.*确认|等回踩|等反抽|不追|别追/.test(t);
   const longScore=scoreKeywords(t,['偏多','多头结构','多头趋势','多头格局','多头控盘','重心上移','看多','试多','接多','做多','共振往上','多周期共振','同步转强','上涨中继','大阳','长阳','打穿','资金进场','继续看多'],['偏空','空头结构','空头格局','重心下移','做空','高空','短空']);
   let state,cls;
-  if(wait){state='等待确认';cls='state-wait'} else if(longScore>=2){state='偏多执行';cls='state-long'} else if(longScore===1){state='偏多观察';cls='state-long'} else if(longScore<=-2){state='偏空执行';cls='state-short'} else if(longScore===-1){state='偏空观察';cls='state-short'} else {state='观望 / 对抗';cls='state-neutral'}
+  if(setup.status==='in-zone'&&setup.dir==='long'){state='试仓机会 · 做多';cls='state-long'}
+  else if(setup.status==='in-zone'&&setup.dir==='short'){state='试仓机会 · 做空';cls='state-short'}
+  else if(setup.status==='near'){state='接近试仓区';cls='state-wait'}
+  else if(setup.dir){state='等待到试仓区';cls='state-wait'}
+  else if(hardWait||softWait){state='等待确认';cls='state-wait'}
+  else if(longScore>=2){state='偏多执行';cls='state-long'} else if(longScore===1){state='偏多观察';cls='state-long'} else if(longScore<=-2){state='偏空执行';cls='state-short'} else if(longScore===-1){state='偏空观察';cls='state-short'} else {state='观望 / 对抗';cls='state-neutral'}
   let bias=longScore>=1?'大结构偏多':longScore<=-1?'大结构偏空':'多空对抗';
   const trigger=findSentence(t,['站稳','突破','破了','跌破','放量','回踩不破','收盘'], '等待关键位出现收盘确认');
   const watch=findSentence(t,['盯盘','盯死','关键位','支撑','压力','分水岭'], e.summary||compact(e.body,180));
   const avoid=findSentence(t,['不追','别追','不动手','宁可','别急','别手痒'], '位置不到不动手，不在区间中部赌方向');
-  return {state,cls,bias,summary:e.summary||compact(e.body,420),trigger,watch,avoid,longScore};
+  return {state,cls,bias,summary:e.summary||compact(e.body,420),trigger,watch,avoid,longScore,setup};
 }
 function levelClause(sent,numStart,numLen){
   const cuts='，,：:';let l=-1,r=sent.length;
@@ -477,6 +568,8 @@ function marketPhase(text,d){
   return {title:d.state,detail:'以最新观点的关键位和收盘确认作为下一步执行依据。'};
 }
 function currentAction(text,d){
+  const setup=d.setup||extractTradeSetup(text,lastPrice),sa=setupAction(setup);
+  if(setup.dir)return sa.label;
   if(/不动手|等方向|宁可空仓|别手痒|别急着动手|不上不下/.test(text))return '先不动手';
   if(d.cls==='state-long')return /不追|别追/.test(text)?'偏多，但只等回踩/确认':'偏多，顺势等入场条件';
   if(d.cls==='state-short')return /不追|别追/.test(text)?'偏空，但只等反抽/确认':'偏空，顺势等入场条件';
@@ -533,7 +626,7 @@ function directionalPlan(text,dir){
   return dir==='long'?'关键压力收盘站稳后，再等回踩/换手确认，不追第一根。':'关键支撑收盘失守后，再等反抽不过/换手确认，不在支撑上追空。';
 }
 function formatPrice(v){if(v===null||v===undefined||!Number.isFinite(+v))return '--';return (+v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
-function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V5.1`}
+function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V5.2`}
 function nearestLevels(price,levels){
   if(!price||!levels.length)return {res:null,sup:null};
   const vals=levels.map(x=>x.v).filter(Number.isFinite);
@@ -571,10 +664,10 @@ function deriveStructuredPlan(text,d){
   planLevels={longTrigger:longTrig,shortTrigger:shortTrig,longInvalid,shortInvalid};
   return {longTrig,shortTrig,longTargets,shortTargets,longTriggerText,shortTriggerText,longEntry,shortEntry,longInvalid,shortInvalid,invalidText};
 }
-function actionClass(d,text){if(d.cls==='state-long'&&!/不动手|等方向|宁可空仓/.test(text))return 'long';if(d.cls==='state-short'&&!/不动手|等方向|宁可空仓/.test(text))return 'short';return 'wait'}
+function actionClass(d,text){const setup=d.setup||extractTradeSetup(text,lastPrice);if(setup.status==='in-zone')return setup.dir==='long'?'try-long':'try-short';if(setup.status==='near')return 'near';if(d.cls==='state-long'&&!/不动手|等方向|宁可空仓/.test(text))return 'long';if(d.cls==='state-short'&&!/不动手|等方向|宁可空仓/.test(text))return 'short';return 'wait'}
 function updateQuickBrief(text,d,plan,meta){
   const action=currentAction(text,d),ac=actionClass(d,text);$('quickSymbol').textContent=`${meta.name} · ${meta.code}`;$('quickVerdict').textContent=`${d.state}｜${d.bias}`;
-  const next=nextTaskInfo(text,d);$('quickSentence').textContent=`${marketPhase(text,d).title}。${next.focus||d.watch}；${next.gate||d.trigger}。`;
+  const next=nextTaskInfo(text,d),setup=d.setup||extractTradeSetup(text,lastPrice);$('quickSentence').textContent=setup.dir?`${marketPhase(text,d).title}。明确${setup.dir==='long'?'多头':'空头'}试仓区 ${zoneText(setup.zone)}；${setup.condition}。`:`${marketPhase(text,d).title}。${next.focus||d.watch}；${next.gate||d.trigger}。`;
   $('quickAction').textContent=action;$('quickActionBox').className='quick-action '+ac;
   $('quickCurrentPrice').textContent=lastPrice?formatPrice(lastPrice):'--';$('quickPriceMode').textContent=isLatestDate()?'LIVE':'参考现价';
   $('quickLongTrigger').textContent=plan.longTrig?formatPrice(plan.longTrig):'待确认';$('quickLongDist').textContent=plan.longTrig&&lastPrice?fmtDist(plan.longTrig,lastPrice):'';
@@ -588,7 +681,20 @@ function updateQuickBrief(text,d,plan,meta){
     else if(lastPrice&&plan.shortTrig){hint='重点盯下方关键位是否失守确认'}
     $('currentZoneHint').textContent=hint;
   }
-  const noTrade=/先不动手|先观察|等待/.test(action)||executionScore(text,d)<55;$('noTradeBanner').classList.toggle('show',noTrade);
+  const noTrade=setup.status!=='in-zone'&&(/先不动手|先观察|等待/.test(action)||executionScore(text,d)<55);$('noTradeBanner').classList.toggle('show',noTrade);
+}
+
+function updateExecutionOpportunity(text,d,plan){
+  const setup=d.setup||extractTradeSetup(text,lastPrice),box=$('executionOpportunity');if(!box)return;
+  const sa=setupAction(setup);box.className='execution-opportunity '+(setup.status==='in-zone'?(setup.dir==='long'?'long active':'short active'):setup.status==='near'?'near':'wait');
+  $('execHeadline').textContent=setup.dir?sa.label:'最新观点没有给出明确的试仓位置';
+  $('execReason').textContent=setup.dir?setup.source:'当前只提到观察/确认条件，没有“轻仓试多、尝试短空、回踩可接”等明确执行语句。';
+  $('execZone').textContent=setup.zone?zoneText(setup.zone):'--';$('execZoneDistance').textContent=setup.zone?tradeSetupDistance(setup,lastPrice):'--';
+  $('execDirection').textContent=setup.dir==='long'?'做多':setup.dir==='short'?'做空':'--';$('execMode').textContent=setup.status==='in-zone'?'试仓条件已到位':setup.status==='near'?'非常接近，准备观察':'等待价格到位';
+  $('execCondition').textContent=setup.condition||'--';
+  let invalid='--';if(setup.invalid)invalid=formatPrice(setup.invalid);else if(setup.dir==='long'&&plan.longInvalid)invalid=formatPrice(plan.longInvalid);else if(setup.dir==='short'&&plan.shortInvalid)invalid=formatPrice(plan.shortInvalid);$('execInvalid').textContent=invalid;
+  let target=setup.target;if(!target&&setup.dir==='long')target=plan.longTargets[0];if(!target&&setup.dir==='short')target=plan.shortTargets[0];$('execTarget').textContent=target?formatPrice(target):'待确认';
+  if(target&&setup.zone&&lastPrice){const entry=Math.min(Math.max(lastPrice,setup.zone.lo),setup.zone.hi),risk=setup.invalid?Math.abs(entry-setup.invalid):null,reward=Math.abs(target-entry);$('execRRHint').textContent=risk&&risk>0?`参考空间 R:R ≈ ${(reward/risk).toFixed(1)} : 1`:'目标来自最新观点'}else $('execRRHint').textContent='目标来自最新观点';
 }
 function updateBattlePlan(text,d,plan){
   const fmt=v=>v?formatPrice(v):'待确认';
@@ -597,11 +703,14 @@ function updateBattlePlan(text,d,plan){
   $('longEntry').textContent=plan.longEntry;$('shortEntry').textContent=plan.shortEntry;
   $('longTarget1').textContent=fmt(plan.longTargets[0]);$('longTarget2').textContent=fmt(plan.longTargets[1]);$('shortTarget1').textContent=fmt(plan.shortTargets[0]);$('shortTarget2').textContent=fmt(plan.shortTargets[1]);
   $('longInvalid').textContent=plan.longInvalid?`${formatPrice(plan.longInvalid)} 下方结构破坏`:plan.invalidText;$('shortInvalid').textContent=plan.shortInvalid?`${formatPrice(plan.shortInvalid)} 上方重新转强`:plan.invalidText;
-  const longReady=d.cls==='state-long'&&!/不动手|等方向|宁可空仓/.test(text),shortReady=d.cls==='state-short'&&!/不动手|等方向|宁可空仓/.test(text);
-  $('longPlanStatus').textContent=longReady?'优先观察':'备选方案';$('shortPlanStatus').textContent=shortReady?'优先观察':'备选方案';
-  $('longPlanNote').textContent=longReady?'当前结构偏多，但仍以触发和回踩确认作为执行前提。':'当前不是主动追多阶段；只有上方结构确认后才启用多头预案。';
-  $('shortPlanNote').textContent=shortReady?'当前结构偏空，但仍以破位和反抽确认作为执行前提。':'当前不是主动追空阶段；只有下方结构确认后才启用空头预案。';
-  const score=executionScore(text,d);$('planHealth').textContent=score>=75?'计划状态：接近执行':score>=55?'计划状态：继续观察':'计划状态：等待结构成熟';
+  const setup=d.setup||extractTradeSetup(text,lastPrice);
+  const longReady=setup.dir==='long'&&setup.status==='in-zone',shortReady=setup.dir==='short'&&setup.status==='in-zone';
+  const longNear=setup.dir==='long'&&setup.status==='near',shortNear=setup.dir==='short'&&setup.status==='near';
+  $('longPlanStatus').textContent=longReady?'试仓区已到':longNear?'接近试仓区':d.cls==='state-long'?'优先观察':'备选方案';$('longPlanStatus').className='plan-status'+(longReady?' ready-long':'');
+  $('shortPlanStatus').textContent=shortReady?'试仓区已到':shortNear?'接近试仓区':d.cls==='state-short'?'优先观察':'备选方案';$('shortPlanStatus').className='plan-status'+(shortReady?' ready-short':'');
+  $('longPlanNote').textContent=longReady?`最新观点明确给出多头试仓条件：${setup.source}`:setup.dir==='long'?`明确多头试仓区：${zoneText(setup.zone)}；当前位置${setup.status==='near'?'已接近':'尚未到位'}。`:'当前没有明确的多头试仓语句，保留确认型预案。';
+  $('shortPlanNote').textContent=shortReady?`最新观点明确给出空头试仓条件：${setup.source}`:setup.dir==='short'?`明确空头试仓区：${zoneText(setup.zone)}；当前位置${setup.status==='near'?'已接近':'尚未到位'}。`:'当前没有明确的空头试仓语句，保留确认型预案。';
+  const score=executionScore(text,d);$('planHealth').textContent=(setup.status==='in-zone'?'计划状态：试仓条件到位':setup.status==='near'?'计划状态：接近试仓区':score>=75?'计划状态：接近执行':score>=55?'计划状态：继续观察':'计划状态：等待结构成熟');
 }
 function opportunityScore(sym,e){
   if(!e)return 5;const d=deriveDecision(e),text=(e.summary||'')+' '+(e.body||'');let score=executionScore(text,d)*.58;
@@ -623,10 +732,10 @@ function renderDecision(){
   const sym=curSym||'ETHUSDT',meta=symMeta(sym),e=latestEntry(curDate,sym);currentEntry=e;const d=deriveDecision(e);
   $('decisionState').textContent=d.state;$('decisionState').className='decision-state '+d.cls;$('biasBadge').textContent=d.bias;$('decisionSummary').textContent=d.summary;$('triggerRule').textContent=d.trigger;$('watchRule').textContent=d.watch;$('avoidRule').textContent=d.avoid;
   const text=(e?.summary||'')+' '+(e?.body||''); currentLevels=extractLevels(text);
-  const structuredPlan=deriveStructuredPlan(text,d);updateQuickBrief(text,d,structuredPlan,meta);updateBattlePlan(text,d,structuredPlan);
+  const structuredPlan=deriveStructuredPlan(text,d);updateQuickBrief(text,d,structuredPlan,meta);updateExecutionOpportunity(text,d,structuredPlan);updateBattlePlan(text,d,structuredPlan);
   const score=executionScore(text,d);$('signalScore').textContent=score;$('signalGrade').textContent=score>=75?'高准备度 · 不是胜率':score>=55?'中等准备度 · 不是胜率':'低准备度 · 继续等';
   $('opinionTime').textContent=e?`${meta.name}观点 ${e.ts||e.period||'--'}`:`${meta.name}观点 --`;const f=freshnessInfo(e);$('freshness').textContent=f.label;$('freshness').className='meta-chip '+f.cls;
-  const phase=marketPhase(text,d),next=nextTaskInfo(text,d);$('phaseTitle').textContent=phase.title;$('phaseDetail').textContent=phase.detail;$('nextTask').textContent=currentAction(text,d);$('nextDetail').textContent=next.focus||'等待关键位进一步明确';$('actionGate').textContent=next.gate||'等待收盘确认';$('actionGateDetail').textContent='只有触发条件完成后才执行，不提前猜方向';$('invalidPlan').textContent='原计划失效条件';$('invalidDetail').textContent=invalidationInfo(text,d);
+  const phase=marketPhase(text,d),next=nextTaskInfo(text,d);$('phaseTitle').textContent=phase.title;$('phaseDetail').textContent=phase.detail;$('nextTask').textContent=currentAction(text,d);$('nextDetail').textContent=next.focus||'等待关键位进一步明确';$('actionGate').textContent=next.gate||'等待收盘确认';$('actionGateDetail').textContent=(d.setup&&d.setup.dir)?'明确试仓区到位时允许按条件轻仓尝试；确认型机会仍需等结构完成。':'只有触发条件完成后才执行，不提前猜方向';$('invalidPlan').textContent='原计划失效条件';$('invalidDetail').textContent=invalidationInfo(text,d);
   $('longPlan').textContent=directionalPlan(text,'long');$('shortPlan').textContent=directionalPlan(text,'short');
   const nearest=nearestLevels(lastPrice,currentLevels);
   $('levelList').innerHTML=currentLevels.length?currentLevels.map(x=>{
@@ -642,7 +751,7 @@ function renderDecision(){
     ['多周期共振',/共振|同步/.test(text),/共振/.test(text)?'ok':'warn'],
     ['位置优势',/支撑|压力|分水岭|关键位/.test(text),/不上不下|中间/.test(text)?'bad':'ok'],
     ['追涨杀跌过滤',/不追|别追|位置不到/.test(text),/不追|别追|位置不到/.test(text)?'ok':'warn'],
-    ['当前可执行性',!(/不动手|等方向|宁可空仓|别手痒/.test(text)),waitClass(text)]
+    ['当前可执行性',d.setup?.status==='in-zone'||!(/不动手|等方向|宁可空仓|别手痒/.test(text)),d.setup?.status==='in-zone'?'ok':waitClass(text)]
   ];
   $('checks').innerHTML=checks.map(x=>`<div class="check ${x[2]}"><i></i><span>${x[0]}</span><b>${x[2]==='ok'?'通过':x[2]==='bad'?'不通过':'等待'}</b></div>`).join('');
   $('rawLatest').innerHTML=e?`<div class="panel" style="padding:16px"><div class="section-label"><h2>${esc(meta.name)} · ${esc(sym)} · ${esc(e.ts)} · 周期 ${esc(e.period)}</h2><span class="sub">原始最新观点</span></div><div style="white-space:pre-line;line-height:1.85;color:#aab6c2;font-size:12px">${esc(e.body)}</div></div>`:'<div class="empty">无最新观点</div>';
@@ -690,6 +799,8 @@ function drawChart(){
   visibleLevels.forEach(l=>{const yy=y(l.v),col=l.type==='res'?'#ff5d5d':l.type==='sup'?'#2ecc71':'#f0b90b';ctx.save();ctx.setLineDash([4,4]);ctx.globalAlpha=.72;ctx.strokeStyle=col;ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;ctx.fillStyle=col;ctx.font='8px Consolas';ctx.fillText(`${l.kind} ${l.v.toFixed(1)}`,pad.l+4,Math.max(9,yy-3));ctx.restore()});
   const special=[['多头触发',planLevels.longTrigger,'#2ecc71'],['空头触发',planLevels.shortTrigger,'#ff5d5d']].filter(x=>x[1]&&x[1]>=lo&&x[1]<=hi);
   special.forEach(([lab,v,col])=>{const yy=y(v);ctx.save();ctx.setLineDash([8,4]);ctx.globalAlpha=.9;ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=col;ctx.font='bold 9px Consolas';ctx.fillText(`${lab} ${v.toFixed(2)}`,Math.max(pad.l+6,W-pad.r-132),Math.max(10,yy-4));ctx.restore()});
+  const currentText=(currentEntry?.summary||'')+' '+(currentEntry?.body||''),setup=extractTradeSetup(currentText,lastPrice);
+  if(setup.zone){const zlo=setup.zone.lo,zhi=setup.zone.hi;if(zhi>=lo&&zlo<=hi){ctx.save();const col=setup.dir==='long'?'#45d98a':'#ff6f76',top=y(Math.min(hi,zhi)),bottom=y(Math.max(lo,zlo));ctx.globalAlpha=.09;ctx.fillStyle=col;ctx.fillRect(pad.l,Math.min(top,bottom),W-pad.l-pad.r,Math.max(2,Math.abs(bottom-top)));ctx.globalAlpha=.95;ctx.strokeStyle=col;ctx.setLineDash([3,3]);[zlo,zhi].forEach(v=>{if(v<lo||v>hi)return;const yy=y(v);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke()});ctx.setLineDash([]);ctx.fillStyle=col;ctx.font='bold 9px Consolas';ctx.fillText(`${setup.dir==='long'?'多头':'空头'}试仓区 ${zoneText(setup.zone)}`,pad.l+6,Math.max(11,Math.min(top,bottom)-4));ctx.restore()}}
   const last=chartData[chartData.length-1];ctx.setLineDash([3,3]);ctx.strokeStyle='#d2b24b';ctx.beginPath();ctx.moveTo(pad.l,y(last.c));ctx.lineTo(W-pad.r,y(last.c));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#e8c85c';ctx.fillText(last.c.toFixed(2),W-pad.r+5,y(last.c)+3);
   ctx.fillStyle='#4c5966';ctx.font='8px Consolas';const firstT=new Date(chartData[0].t),lastT=new Date(chartData[chartData.length-1].t);const fmt=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;ctx.fillText(fmt(firstT),pad.l,H-3);ctx.fillText(fmt(lastT),Math.max(pad.l,W-pad.r-28),H-3);
 }

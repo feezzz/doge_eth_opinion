@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>狗哥行情决策看板 V4.1</title>
+<title>狗哥行情决策看板 V4.2</title>
 <style>
 :root{
   --bg:#090c10;--panel:#0f141a;--panel2:#121820;--line:#202833;--line2:#293442;
@@ -87,12 +87,131 @@ body{font-size:15px;line-height:1.5}
 @media(max-width:820px){body{font-size:14px}.topbar{min-height:68px;padding:10px 13px}.shell{grid-template-columns:1fr}.sidebar{top:0;height:auto}.main{padding:14px}.brand h1{font-size:17px}.live-strip{min-width:0}.decision{padding:18px}.decision-state{font-size:32px}.decision-summary{font-size:15px}.situation-step strong{font-size:13px}.situation-step span{font-size:12px}.metric-panel{padding:15px}.level{grid-template-columns:78px 94px 1fr}.canvas-wrap{height:238px}.radar-card{min-height:98px}.radar-summary{display:-webkit-box}}
 @media(max-width:480px){.radar-grid{grid-template-columns:1fr}.decision-state{font-size:30px}.live-price{font-size:17px}.section-label h2{font-size:13px}.level{grid-template-columns:72px 86px 1fr}.level .desc{font-size:11px}}
 
+
+/* ===== V4.2 整体优化：完整阅读 + 自适应布局 ===== */
+:root{--radius:15px}
+body{font-size:15px;line-height:1.58}
+.main{max-width:1920px;padding:22px 26px 54px}
+.panel{overflow:visible}
+.decision{overflow:hidden}
+
+/* 取消关键区域的人为截断：文字自然换行，卡片自动增高 */
+.radar-summary,
+.situation-step strong,
+.situation-step span,
+.level .desc,
+.tf .detail,
+.tl p{
+  display:block!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  -webkit-line-clamp:unset!important;
+  -webkit-box-orient:unset!important;
+  overflow-wrap:anywhere;
+}
+.card-body.expanded{max-height:none;overflow:visible}
+
+/* 顶部：减少拥挤但保持可读性 */
+.brand{min-width:232px}
+.live-strip{min-width:286px;flex:0 1 360px}
+.top-meta{min-width:0}
+.top-stat{white-space:nowrap}
+
+/* 品种雷达：允许完整摘要，视觉层级更清晰 */
+.radar-grid{grid-template-columns:repeat(4,minmax(220px,1fr));gap:11px;margin-bottom:16px}
+.radar-card{padding:14px 15px;min-height:0;height:100%}
+.radar-top{align-items:flex-start;margin-bottom:7px}
+.radar-name{font-size:15px}.radar-state{font-size:14px;line-height:1.45}
+.radar-summary{font-size:12.5px;line-height:1.65;color:#93a0ad}
+
+/* 第一屏：更强调“现在 -> 接下来 -> 行动门槛” */
+.hero-grid{grid-template-columns:minmax(620px,1.14fr) minmax(460px,.86fr);gap:16px;margin-bottom:16px;align-items:stretch}
+.decision{padding:23px 24px;min-height:0}
+.decision-summary{max-width:none;font-size:16px;line-height:1.85;margin-bottom:18px}
+.situation-flow{grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 22px minmax(0,1fr);gap:0;margin-bottom:14px}
+.situation-step{padding:13px 14px;min-height:112px}
+.situation-step strong{font-size:15px;line-height:1.45;margin-bottom:6px}
+.situation-step span{font-size:12.5px;line-height:1.65;color:#98a5b2}
+.flow-arrow{font-size:17px}
+.distance-strip{gap:10px;margin-bottom:14px}.distance-item{padding:11px 12px}
+.decision-rule{gap:10px}.rule{min-height:0;padding:12px 13px}.rule span{font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.path-grid{gap:10px}.path-card{min-height:0;padding:12px 13px}.path-card span{font-size:12.5px;line-height:1.65;overflow-wrap:anywhere}
+
+/* K线区域更稳，标题换行也不挤 */
+.chart-panel{padding:17px 18px;min-height:0}.chart-head{gap:12px;align-items:flex-start}.chart-subline{flex-wrap:wrap;row-gap:5px}.chart-source{margin-left:0;width:100%}
+.canvas-wrap{height:300px}
+
+/* 三块指标区：描述完整显示 */
+.metric-grid{grid-template-columns:1.22fr 1fr 1fr;gap:16px;margin-bottom:16px;align-items:start}
+.metric-panel{padding:18px 19px;min-height:0}
+.level{grid-template-columns:88px 106px minmax(0,1fr);align-items:start;padding:10px 11px}
+.level .kind{padding-top:2px}.level .desc{font-size:12.5px;line-height:1.6}
+.tf{min-height:96px}.tf .detail{font-size:11.5px;line-height:1.55}
+.check{align-items:flex-start}.check span{line-height:1.5}.check b{white-space:nowrap}
+
+/* 结构变化：不再只显示3行 */
+.timeline{grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;align-items:stretch}
+.tl{min-height:0;padding:14px 15px}.tl p{font-size:12.5px;line-height:1.7;color:#96a3b0}
+
+/* 完整分析：展开后真正展示全文 */
+.cards-grid{gap:11px}.card{padding:14px 15px}.card-summary{font-size:13.5px;line-height:1.72}
+.card-body{font-size:13px;line-height:1.85}.card-body.expanded{display:block;max-height:none;overflow:visible}
+.card-toggle{font-size:12px}
+
+/* 常见 1366/1440 宽屏：宁可换行/换层，不把文字压扁 */
+@media(max-width:1500px){
+  .shell{grid-template-columns:230px minmax(0,1fr)}
+  .sidebar{padding-left:12px;padding-right:12px}
+  .main{padding-left:20px;padding-right:20px}
+  .radar-grid{grid-template-columns:1fr 1fr}
+  .hero-grid{grid-template-columns:1fr}
+  .canvas-wrap{height:320px}
+  .metric-grid{grid-template-columns:1fr 1fr}
+  .metric-grid>.metric-panel:last-child{grid-column:1/-1}
+  .timeline{grid-template-columns:1fr 1fr}
+  .cards-grid{grid-template-columns:1fr}
+}
+@media(max-width:1080px){
+  .top-meta .top-stat:nth-child(2){display:none}
+  .metric-grid{grid-template-columns:1fr}
+  .metric-grid>.metric-panel:last-child{grid-column:auto}
+  .timeline{grid-template-columns:1fr}
+}
+@media(max-width:820px){
+  .panel{border-radius:12px}
+  .radar-grid{grid-template-columns:1fr 1fr}
+  .radar-summary{display:block!important}
+  .situation-flow{grid-template-columns:1fr;gap:0}
+  .situation-step{min-height:0}
+  .flow-arrow{height:20px;transform:rotate(90deg)}
+  .distance-strip{grid-template-columns:1fr}
+  .decision-rule{grid-template-columns:1fr}
+  .path-grid{grid-template-columns:1fr}
+  .canvas-wrap{height:255px}
+}
+@media(max-width:520px){
+  .radar-grid{grid-template-columns:1fr}
+  .decision{padding:17px}
+  .decision-state{font-size:29px}
+  .decision-summary{font-size:14px}
+  .level{grid-template-columns:72px 88px minmax(0,1fr)}
+}
+
+/* V4.2.1 决策闭环补全：第四步“计划失效” */
+.situation-flow{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;align-items:stretch}
+.flow-arrow{display:none}
+.situation-step.invalid{border-color:#4b2525;background:#120d0f}
+.situation-step.invalid strong{color:#ff8c8c}
+@media(max-width:1100px){.situation-flow{grid-template-columns:1fr 1fr}}
+@media(max-width:820px){.situation-flow{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V4</small></div></div>
+    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V4.2</small></div></div>
     <div class="live-strip"><span class="live-dot"></span><span class="live-symbol" id="liveSymbol">ETH · ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
     <div class="top-meta"><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
   </header>
@@ -100,7 +219,7 @@ body{font-size:15px;line-height:1.5}
     <aside class="sidebar">
       <div class="side-title">日期</div><ul class="date-list" id="dateList"></ul>
       <div class="side-title">品种</div><div class="sym-filters" id="symFilters"></div>
-      <div class="side-note">第一屏依次回答：<br><b style="color:#c6d0db">现在是什么状态？</b><br>接下来盯哪里？<br>满足什么条件才行动？</div>
+      <div class="side-note">第一屏只回答四件事：<br><b style="color:#c6d0db">现在是什么状态？</b><br>接下来盯哪里？<br>满足什么条件才行动？<br>什么情况下计划失效？</div>
     </aside>
     <main class="main">
       <div class="section-label radar-label"><h2>全品种状态雷达</h2><span class="sub">ETH · 闪迪 · SK 海力士 · 镁光｜点击切换</span></div>
@@ -119,6 +238,7 @@ body{font-size:15px;line-height:1.5}
             <div class="situation-step next"><b>接下来</b><strong id="nextTask">等待关键位</strong><span id="nextDetail">先观察，再决定是否行动</span></div>
             <div class="flow-arrow">→</div>
             <div class="situation-step gate"><b>行动门槛</b><strong id="actionGate">等待确认</strong><span id="actionGateDetail">条件未满足前不提前下注</span></div>
+            <div class="situation-step invalid"><b>计划失效</b><strong id="invalidPlan">结构被破坏</strong><span id="invalidDetail">出现失效条件后停止原计划，重新等待结构。</span></div>
           </div>
           <div class="distance-strip" id="distanceStrip"><div class="distance-item res"><b>最近压力</b><strong>--</strong></div><div class="distance-item current"><b>当前价格</b><strong>--</strong></div><div class="distance-item sup"><b>最近支撑</b><strong>--</strong></div></div>
           <div class="decision-rule">
@@ -142,13 +262,13 @@ body{font-size:15px;line-height:1.5}
       </div>
 
       <div class="tabs"><button class="tab-btn active" data-tab="pulse">结构变化</button><button class="tab-btn" data-tab="logs">完整分析</button><button class="tab-btn" data-tab="summary">今日原文</button></div>
-      <section class="tab-view active" id="view-pulse"><div class="section-label"><h2>最近结构变化</h2><span class="sub">同一品种最近 8 条</span></div><div class="timeline" id="timeline"></div></section>
+      <section class="tab-view active" id="view-pulse"><div class="section-label"><h2>最近结构变化</h2><span class="sub">同一品种最近 8 条 · 完整摘要</span></div><div class="timeline" id="timeline"></div></section>
       <section class="tab-view" id="view-logs"><div class="search-row"><input id="searchInput" placeholder="搜索：突破 / 换手K / 共振 / 支撑 / 压力 / 漂移..."><span class="search-info" id="searchInfo"></span></div><div id="content"></div></section>
       <section class="tab-view" id="view-summary"><div id="rawLatest"></div></section>
     </main>
   </div>
 </div>
-<script src="data.js?v=20260812125519"></script>
+<script src="data.js?v=20260812131554"></script>
 <script>
 (function(){
 'use strict';
@@ -171,7 +291,7 @@ function compact(s,n=160){s=String(s||'').replace(/\s+/g,' ').trim();return s.le
 function latestEntry(date,sym){const d=DATA.days[date];if(!d||d.type!=='log')return null;const a=d.entries.filter(e=>!sym||e.symbol===sym);return a.length?a[a.length-1]:null}
 function allEntries(date,sym){const d=DATA.days[date];if(!d||d.type!=='log')return [];return d.entries.filter(e=>!sym||e.symbol===sym)}
 function splitSentences(t){return String(t||'').replace(/\n+/g,' ').split(/[。！？!?；;]/).map(x=>x.trim()).filter(Boolean)}
-function findSentence(t,keys,fallback=''){const s=splitSentences(t);for(const k of keys){const x=s.find(v=>v.includes(k));if(x)return compact(x,90)}return fallback}
+function findSentence(t,keys,fallback=''){const s=splitSentences(t);for(const k of keys){const x=s.find(v=>v.includes(k));if(x)return compact(x,220)}return fallback}
 function scoreKeywords(text,pos,neg){let p=0,n=0;pos.forEach(k=>{if(text.includes(k))p++});neg.forEach(k=>{if(text.includes(k))n++});return p-n}
 function deriveDecision(e){
   if(!e)return {state:'暂无数据',cls:'state-neutral',bias:'结构判断 --',summary:'当前日期没有可读取的分析。',trigger:'--',watch:'--',avoid:'--'};
@@ -182,9 +302,9 @@ function deriveDecision(e){
   if(wait){state='等待确认';cls='state-wait'} else if(longScore>=2){state='偏多执行';cls='state-long'} else if(longScore===1){state='偏多观察';cls='state-long'} else if(longScore<=-2){state='偏空执行';cls='state-short'} else if(longScore===-1){state='偏空观察';cls='state-short'} else {state='观望 / 对抗';cls='state-neutral'}
   let bias=longScore>=1?'大结构偏多':longScore<=-1?'大结构偏空':'多空对抗';
   const trigger=findSentence(t,['站稳','突破','破了','跌破','放量','回踩不破','收盘'], '等待关键位出现收盘确认');
-  const watch=findSentence(t,['盯盘','盯死','关键位','支撑','压力','分水岭'], compact(e.summary||e.body,80));
+  const watch=findSentence(t,['盯盘','盯死','关键位','支撑','压力','分水岭'], e.summary||compact(e.body,180));
   const avoid=findSentence(t,['不追','别追','不动手','宁可','别急','别手痒'], '位置不到不动手，不在区间中部赌方向');
-  return {state,cls,bias,summary:compact(e.summary||e.body,190),trigger,watch,avoid,longScore};
+  return {state,cls,bias,summary:e.summary||compact(e.body,420),trigger,watch,avoid,longScore};
 }
 function levelClause(sent,numStart,numLen){
   const cuts='，,：:';let l=-1,r=sent.length;
@@ -207,7 +327,7 @@ function extractLevels(text){
       else if(/压力|阻力|上方|高点|冲不过|目标|摸到/.test(clause)){type='res';kind='压力'}
       else if(/分水岭|关键位|突破|跌破|站稳|失守|换手/.test(clause)){type='pivot';kind='分界'}
       else if(lastPrice){type=v>lastPrice?'res':'sup';kind=v>lastPrice?'压力':'支撑'}
-      const key=v.toFixed(3),item={v,type,kind,desc:compact(sent,62)},old=map.get(key);
+      const key=v.toFixed(3),item={v,type,kind,desc:sent},old=map.get(key);
       if(!old||old.kind==='观察位'&&kind!=='观察位')map.set(key,item);
     }
   });
@@ -221,7 +341,7 @@ function timeframeStatus(text,tf){
   const sentences=splitSentences(text);const hit=sentences.filter(x=>aliases[tf].some(a=>x.includes(a))).slice(-2).join(' ');
   if(!hit)return {cls:'neutral',label:'未明确',detail:'等待新描述'};
   const bull=scoreKeywords(hit,['上移','阳线','偏多','多头','走强','放量拉升','站稳','反弹','共振往上'],['下移','阴线','偏空','空头','走弱','阴跌','破位']);
-  return bull>=2?{cls:'bull',label:'偏多',detail:compact(hit,28)}:bull<=-2?{cls:'bear',label:'偏空',detail:compact(hit,28)}:{cls:'neutral',label:'对抗',detail:compact(hit,28)};
+  return bull>=2?{cls:'bull',label:'偏多',detail:compact(hit,72)}:bull<=-2?{cls:'bear',label:'偏空',detail:compact(hit,72)}:{cls:'neutral',label:'对抗',detail:compact(hit,72)};
 }
 
 function marketPhase(text,d){
@@ -241,7 +361,16 @@ function currentAction(text,d){
 function nextTaskInfo(text,d){
   const focus=findSentence(text,['盯盘就看','盯住','盯死','就看','等一个','等区间','等待','关键压力','关键支撑'],d.watch);
   const gate=findSentence(text,['站稳','跌破','突破','失守','回踩不破','反抽不过','放量'],d.trigger);
-  return {focus:compact(focus,70),gate:compact(gate,70)};
+  return {focus:compact(focus,140),gate:compact(gate,140)};
+}
+function invalidationInfo(text,d){
+  const sentences=splitSentences(text);
+  let keys=['计划失效','失效','止损','结构破坏'];
+  if(d.cls==='state-long')keys=keys.concat(['跌破','失守','守不住','站不回']);
+  else if(d.cls==='state-short')keys=keys.concat(['突破','站稳','收回','重新转强']);
+  else keys=keys.concat(['跌破','失守','突破','站稳']);
+  for(const k of keys){const hit=sentences.find(x=>x.includes(k));if(hit)return compact(hit,220)}
+  return d.avoid||'关键结构被破坏后，停止原计划并重新等待确认';
 }
 function radarClass(cls){return cls.includes('long')?'long':cls.includes('short')?'short':cls.includes('wait')?'wait':'neutral'}
 
@@ -301,7 +430,7 @@ function renderDecision(){
   const text=(e?.summary||'')+' '+(e?.body||''); currentLevels=extractLevels(text);
   const score=executionScore(text,d);$('signalScore').textContent=score;$('signalGrade').textContent=score>=75?'高准备度 · 不是胜率':score>=55?'中等准备度 · 不是胜率':'低准备度 · 继续等';
   $('opinionTime').textContent=e?`${meta.name}观点 ${e.ts||e.period||'--'}`:`${meta.name}观点 --`;const f=freshnessInfo(e);$('freshness').textContent=f.label;$('freshness').className='meta-chip '+f.cls;
-  const phase=marketPhase(text,d),next=nextTaskInfo(text,d);$('phaseTitle').textContent=phase.title;$('phaseDetail').textContent=phase.detail;$('nextTask').textContent=currentAction(text,d);$('nextDetail').textContent=next.focus||'等待关键位进一步明确';$('actionGate').textContent=next.gate||'等待收盘确认';$('actionGateDetail').textContent=d.avoid||'条件未满足前不提前下注';
+  const phase=marketPhase(text,d),next=nextTaskInfo(text,d);$('phaseTitle').textContent=phase.title;$('phaseDetail').textContent=phase.detail;$('nextTask').textContent=currentAction(text,d);$('nextDetail').textContent=next.focus||'等待关键位进一步明确';$('actionGate').textContent=next.gate||'等待收盘确认';$('actionGateDetail').textContent='只有触发条件完成后才执行，不提前猜方向';$('invalidPlan').textContent='原计划失效条件';$('invalidDetail').textContent=invalidationInfo(text,d);
   $('longPlan').textContent=directionalPlan(text,'long');$('shortPlan').textContent=directionalPlan(text,'short');
   $('levelList').innerHTML=currentLevels.length?currentLevels.map(x=>`<div class="level ${x.type}"><span class="kind">${x.kind}</span><span class="price">${formatPrice(x.v)}</span><span class="desc" title="${esc(x.desc)}">${esc(x.desc)}</span></div>`).join(''):`<div class="empty" style="padding:22px">暂未提取到 ${esc(meta.name)} 关键价位</div>`;
   const tfs=['5m','15m','30m','1H','4H'];
@@ -319,11 +448,11 @@ function renderDecision(){
   updateInstrumentUI();updateDistanceStrip();if(chartData.length)drawChart();
 }
 function waitClass(t){return /不动手|等方向|宁可空仓|别手痒|不上不下/.test(t)?'bad':(/等|确认/.test(t)?'warn':'ok')}
-function renderTimeline(){const list=allEntries(curDate,curSym||'ETHUSDT').slice(-8).reverse();$('timeline').innerHTML=list.length?list.map(e=>{const d=deriveDecision(e);const tc=d.cls.includes('long')?'long':d.cls.includes('short')?'short':d.cls.includes('wait')?'wait':'';return `<div class="tl ${tc}"><div class="time">${esc(e.ts||e.period)}</div><div class="tl-state ${d.cls.replace('state-','')==='long'?'up':d.cls.replace('state-','')==='short'?'down':''}">${esc(d.state)} · ${esc(d.bias)}</div><p>${esc(e.summary||compact(e.body,100))}</p></div>`}).join(''):'<div class="empty">暂无结构变化</div>'}
+function renderTimeline(){const list=allEntries(curDate,curSym||'ETHUSDT').slice(-8).reverse();$('timeline').innerHTML=list.length?list.map(e=>{const d=deriveDecision(e);const tc=d.cls.includes('long')?'long':d.cls.includes('short')?'short':d.cls.includes('wait')?'wait':'';return `<div class="tl ${tc}"><div class="time">${esc(e.ts||e.period)}</div><div class="tl-state ${d.cls.replace('state-','')==='long'?'up':d.cls.replace('state-','')==='short'?'down':''}">${esc(d.state)} · ${esc(d.bias)}</div><p title="${esc(e.summary||e.body||'')}">${esc(e.summary||compact(e.body,200))}</p></div>`}).join(''):'<div class="empty">暂无结构变化</div>'}
 function selectSymbol(s){if(!s||s===curSym)return;curSym=s;lastPrice=null;chartData=[];currentLevels=[];renderAll();loadTicker();loadChart()}
-function renderRadar(){const box=$('symbolRadar');if(!box)return;const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));const syms=order.concat(rest);box.innerHTML=syms.map(sym=>{const e=latestEntry(curDate,sym),d=deriveDecision(e),m=symMeta(sym);return `<button class="radar-card ${radarClass(d.cls)} ${sym===curSym?'active':''}" data-sym="${sym}"><div class="radar-top"><div><span class="radar-name">${esc(m.name)}</span><span class="radar-code">${esc(m.code)}</span></div><span class="radar-time">${esc(e?.ts||'--')}</span></div><div class="radar-state">${esc(d.state)} · ${esc(d.bias.replace('大结构',''))}</div><div class="radar-summary">${esc(e?.summary||compact(e?.body||'暂无分析',80))}</div></button>`}).join('');box.querySelectorAll('.radar-card').forEach(b=>b.onclick=()=>selectSymbol(b.dataset.sym))}
+function renderRadar(){const box=$('symbolRadar');if(!box)return;const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));const syms=order.concat(rest);box.innerHTML=syms.map(sym=>{const e=latestEntry(curDate,sym),d=deriveDecision(e),m=symMeta(sym);return `<button class="radar-card ${radarClass(d.cls)} ${sym===curSym?'active':''}" data-sym="${sym}"><div class="radar-top"><div><span class="radar-name">${esc(m.name)}</span><span class="radar-code">${esc(m.code)}</span></div><span class="radar-time">${esc(e?.ts||'--')}</span></div><div class="radar-state">${esc(d.state)} · ${esc(d.bias.replace('大结构',''))}</div><div class="radar-summary" title="${esc(e?.summary||e?.body||'暂无分析')}">${esc(e?.summary||compact(e?.body||'暂无分析',160))}</div></button>`}).join('');box.querySelectorAll('.radar-card').forEach(b=>b.onclick=()=>selectSymbol(b.dataset.sym))}
 function renderSidebar(){const ul=$('dateList');ul.innerHTML='';DATES.forEach(d=>{const day=DATA.days[d];const li=document.createElement('li');li.className=d===curDate?'active':'';li.innerHTML=`<span>${d.slice(5)}</span><span class="cnt">${day.type==='log'?day.entries.length:'doc'}</span>`;li.onclick=()=>{curDate=d;renderAll();loadChart()};ul.appendChild(li)});const div=$('symFilters');div.innerHTML='';const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));order.concat(rest).forEach(s=>{const m=symMeta(s),b=document.createElement('button');b.className='sym-chip '+(s===curSym?'active':'');b.innerHTML=`<strong>${esc(m.name)}</strong><small>${esc(m.code)} · ${esc(m.kind)}</small>`;b.onclick=()=>selectSymbol(s);div.appendChild(b)})}
-function renderLogs(){const day=DATA.days[curDate],content=$('content');if(!day){content.innerHTML='<div class="empty">无数据</div>';return}if(day.type==='summary'){content.innerHTML=`<div class="summary-doc">${day.html}</div>`;return}let entries=day.entries.slice().reverse();if(curSym)entries=entries.filter(e=>e.symbol===curSym);if(searchQ)entries=entries.filter(e=>((e.summary||'')+(e.body||'')).toLowerCase().includes(searchQ));const groups={};entries.forEach(e=>(groups[e.symbol]||(groups[e.symbol]=[])).push(e));let html=`<div class="day-header"><span class="day-dot"></span>${curDate} · ${curSym?symDisplay(curSym):'全部品种'}</div>`;Object.keys(groups).forEach(sym=>{html+=`<div class="sym-section"><div class="sym-title"><span class="badge ${SYM_BADGE[sym]||''}">${esc(symDisplay(sym))}</span><span class="count">${groups[sym].length} 条</span></div><div class="cards-grid">`;groups[sym].forEach((e,i)=>{const id='body_'+sym+'_'+i;html+=`<div class="card ${SYM_CLASS[sym]||''}"><div class="card-header"><span class="card-time">${esc(e.ts)}</span><span class="card-period">周期 ${esc(e.period)}</span></div><div class="card-summary">${highlight(e.summary||compact(e.body,110),searchQ)}</div><div class="card-body" id="${id}">${esc(e.body)}</div><span class="card-toggle" data-target="${id}">展开全文</span></div>`});html+='</div></div>'});content.innerHTML=html||'<div class="empty">没有匹配条目</div>';$('searchInfo').textContent=searchQ?'匹配 '+entries.length+' 条':'';content.querySelectorAll('.card-toggle').forEach(x=>x.onclick=function(){const b=$(this.dataset.target);b.classList.toggle('expanded');this.textContent=b.classList.contains('expanded')?'收起':'展开全文'})}
+function renderLogs(){const day=DATA.days[curDate],content=$('content');if(!day){content.innerHTML='<div class="empty">无数据</div>';return}if(day.type==='summary'){content.innerHTML=`<div class="summary-doc">${day.html}</div>`;return}let entries=day.entries.slice().reverse();if(curSym)entries=entries.filter(e=>e.symbol===curSym);if(searchQ)entries=entries.filter(e=>((e.summary||'')+(e.body||'')).toLowerCase().includes(searchQ));const groups={};entries.forEach(e=>(groups[e.symbol]||(groups[e.symbol]=[])).push(e));let html=`<div class="day-header"><span class="day-dot"></span>${curDate} · ${curSym?symDisplay(curSym):'全部品种'}</div>`;Object.keys(groups).forEach(sym=>{html+=`<div class="sym-section"><div class="sym-title"><span class="badge ${SYM_BADGE[sym]||''}">${esc(symDisplay(sym))}</span><span class="count">${groups[sym].length} 条</span></div><div class="cards-grid">`;groups[sym].forEach((e,i)=>{const id='body_'+sym+'_'+i;html+=`<div class="card ${SYM_CLASS[sym]||''}"><div class="card-header"><span class="card-time">${esc(e.ts)}</span><span class="card-period">周期 ${esc(e.period)}</span></div><div class="card-summary">${highlight(e.summary||compact(e.body,220),searchQ)}</div><div class="card-body" id="${id}">${esc(e.body)}</div><span class="card-toggle" data-target="${id}">展开全文</span></div>`});html+='</div></div>'});content.innerHTML=html||'<div class="empty">没有匹配条目</div>';$('searchInfo').textContent=searchQ?'匹配 '+entries.length+' 条':'';content.querySelectorAll('.card-toggle').forEach(x=>x.onclick=function(){const b=$(this.dataset.target);b.classList.toggle('expanded');this.textContent=b.classList.contains('expanded')?'收起':'展开全文'})}
 function highlight(t,q){let e=esc(t);if(!q)return e;const r=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');return e.replace(r,'<mark class="search-hl">$1</mark>')}
 function renderAll(){renderSidebar();renderRadar();renderDecision();renderTimeline();renderLogs()}
 function initMeta(){$('genTime').textContent='数据 '+(DATA.generated_at||'--');$('statLine').textContent=`${DATA.meta.total_entries||0} 条 · ${(DATA.meta.dates||[]).length} 天`;const p=DATA.positions||{};if(p.entries&&p.entries.length){$('posWidget').innerHTML='<span class="pos-pill">持仓 '+p.entries.length+' 笔</span>'}else{$('posWidget').innerHTML='<span class="pos-pill">空仓</span>'}}

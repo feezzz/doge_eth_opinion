@@ -1,509 +1,204 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>狗哥行情分析面板</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif;background:#0a0e13;color:#c9d1d9;min-height:100vh}
-
-a{color:#f0b90b;text-decoration:none}
-
-/* ── topbar ── */
-.topbar{
-  background:linear-gradient(135deg,#0d1117 0%,#111820 100%);
-  border-bottom:1px solid #21262d;
-  padding:14px 24px;
-  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
-  position:sticky;top:0;z-index:10;
-  backdrop-filter:blur(8px);
-}
-.topbar h1{font-size:20px;font-weight:700;color:#f0b90b;white-space:nowrap;letter-spacing:0.5px}
-.topbar h1::before{content:'🐕 ';font-size:18px}
-.topbar .meta{font-size:11px;color:#484f58;margin-left:4px}
-.topbar .stats{display:flex;gap:8px;font-size:12px;margin-left:auto}
-.topbar .stat-item{
-  background:#0d1117;border:1px solid #21262d;
-  padding:6px 14px;border-radius:6px;color:#8b949e;
-  display:flex;align-items:center;gap:6px;
-}
-.topbar .stat-item .val{color:#e6edf3;font-weight:700;font-size:15px}
-.topbar .stat-dot{width:6px;height:6px;border-radius:50%}
-.topbar .stat-dot.entries{background:#f0b90b}
-.topbar .stat-dot.symbols{background:#58a6ff}
-.topbar .stat-dot.days{background:#3fb950}
-
-/* ── pos widget ── */
-.pos-widget{
-  background:#0d1117;border:1px solid #21262d;border-radius:8px;
-  padding:8px 16px;font-size:12px;display:flex;gap:14px;align-items:center;
-}
-.pos-widget .pos-label{color:#484f58;font-size:10px;text-transform:uppercase;letter-spacing:0.5px}
-.pos-widget .pos-val{color:#e6edf3;font-weight:600;font-size:13px}
-.pos-widget .pnl-pos{color:#3fb950;font-weight:700}
-.pos-widget .pnl-neg{color:#f85149;font-weight:700}
-.pos-widget .badge-empty{
-  background:#1a0a0a;color:#f85149;padding:2px 8px;border-radius:3px;
-  font-size:10px;font-weight:600;text-transform:uppercase;
-}
-.pos-widget .btn-hist{
-  background:#21262d;border:1px solid #30363d;color:#8b949e;
-  cursor:pointer;border-radius:4px;font-size:10px;padding:3px 10px;
-  transition:all .15s;
-}
-.pos-widget .btn-hist:hover{background:#30363d;color:#e6edf3}
-
-/* ── layout ── */
-.layout{display:flex;height:calc(100vh - 64px)}
-.sidebar{
-  width:260px;background:#0d1117;border-right:1px solid #21262d;
-  padding:20px 16px;overflow-y:auto;flex-shrink:0;
-}
-.main{flex:1;overflow-y:auto;padding:20px 28px 40px}
-
-/* ── sidebar ── */
-.sidebar h3{
-  font-size:10px;color:#484f58;margin-bottom:10px;
-  text-transform:uppercase;letter-spacing:1.5px;font-weight:600;
-  display:flex;align-items:center;gap:6px;
-}
-.sidebar h3::after{content:'';flex:1;height:1px;background:#21262d}
-
-.date-list{list-style:none;margin-bottom:24px}
-.date-list li{
-  padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;
-  color:#8b949e;transition:all .2s;display:flex;justify-content:space-between;
-  align-items:center;margin-bottom:2px;
-}
-.date-list li:hover{background:#161b22;color:#e6edf3}
-.date-list li.active{
-  background:linear-gradient(135deg,#1f2a37 0%,#1a2330 100%);
-  color:#f0b90b;font-weight:600;
-  box-shadow:inset 3px 0 0 #f0b90b;
-}
-.date-list li .cnt{
-  font-size:10px;color:#30363d;background:#161b22;
-  padding:1px 6px;border-radius:3px;font-weight:500;
-}
-.date-list li.active .cnt{background:#2a1f0a;color:#d2991d}
-
-.sym-filters{display:flex;flex-wrap:wrap;gap:5px}
-.sym-chip{
-  padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;
-  border:1px solid #21262d;color:#8b949e;background:transparent;
-  transition:all .2s;font-weight:500;
-}
-.sym-chip:hover{border-color:#f0b90b;color:#e6edf3;background:#161b22}
-.sym-chip.active{background:#f0b90b;color:#0d1117;border-color:#f0b90b;font-weight:700}
-.sym-chip.eth{border-color:#3c2d0a}
-.sym-chip.eth.active{background:#f0b90b;color:#0d1117}
-.sym-chip.mu{border-color:#0a2a3a}
-.sym-chip.mu.active{background:#58a6ff;border-color:#58a6ff;color:#0d1117}
-.sym-chip.sndk{border-color:#1a0a2f}
-.sym-chip.sndk.active{background:#bc8cff;border-color:#bc8cff;color:#0d1117}
-.sym-chip.skhy{border-color:#0a2f1a}
-.sym-chip.skhy.active{background:#3fb950;border-color:#3fb950;color:#0d1117}
-
-/* ── search ── */
-.search-bar{margin-bottom:20px;display:flex;gap:10px}
-.search-bar input{
-  flex:1;background:#0d1117;border:1px solid #21262d;
-  border-radius:8px;padding:10px 16px;color:#e6edf3;font-size:13px;
-  outline:none;transition:border-color .2s;
-}
-.search-bar input:focus{border-color:#f0b90b;box-shadow:0 0 0 3px rgba(240,185,11,0.08)}
-.search-bar input::placeholder{color:#30363d}
-.search-bar .search-info{font-size:11px;color:#484f58;align-self:center;white-space:nowrap}
-
-/* ── day header ── */
-.day-header{
-  font-size:17px;font-weight:700;color:#f0b90b;margin-bottom:16px;
-  padding-bottom:10px;border-bottom:1px solid #21262d;
-  display:flex;align-items:center;gap:8px;
-}
-.day-header .day-dot{width:8px;height:8px;background:#f0b90b;border-radius:50%}
-
-/* ── sym section ── */
-.sym-section{margin-bottom:24px}
-.sym-title{
-  font-size:13px;font-weight:600;margin-bottom:10px;
-  display:flex;align-items:center;gap:8px;color:#8b949e;
-}
-.sym-title .badge{
-  padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:0.5px;
-}
-.sym-title .count{font-size:11px;color:#484f58}
-
-.badge-eth{background:#2a1f0a;color:#f0b90b;border:1px solid #3c2d0a}
-.badge-mu{background:#0a1f2a;color:#58a6ff;border:1px solid #0a2a3a}
-.badge-sndk{background:#150a2a;color:#bc8cff;border:1px solid #1a0a2f}
-.badge-skhy{background:#0a1f12;color:#3fb950;border:1px solid #0a2f1a}
-
-/* ── card ── */
-.card{
-  background:#0d1117;border:1px solid #21262d;border-left:3px solid #30363d;
-  border-radius:6px;padding:10px 14px;margin-bottom:8px;
-  transition:all .2s;
-}
-.card:hover{border-color:#30363d;border-left-color:#484f58;background:#111820}
-.card.eth{border-left-color:#f0b90b}
-.card.mu{border-left-color:#58a6ff}
-.card.sndk{border-left-color:#bc8cff}
-.card.skhy{border-left-color:#3fb950}
-
-.card-header{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
-.card-time{font-size:11px;color:#484f58;font-family:'SF Mono','Cascadia Code','Consolas',monospace}
-.card-badge{
-  font-size:9px;padding:1px 7px;border-radius:3px;font-weight:700;
-  text-transform:uppercase;letter-spacing:0.3px;
-}
-.card-period{
-  font-size:10px;background:#161b22;color:#8b949e;
-  padding:1px 6px;border-radius:3px;font-family:monospace;
-}
-.card-summary{
-  font-size:13px;color:#c9d1d9;line-height:1.5;
-  padding-left:4px;margin-bottom:2px;
-}
-.card-body{
-  font-size:13px;color:#8b949e;line-height:1.7;white-space:pre-line;
-  display:none;margin-top:8px;padding:12px 14px;
-  background:#080c10;border-radius:4px;
-  border:1px solid #161b22;
-  max-height:500px;overflow-y:auto;
-}
-.card-body.expanded{display:block}
-.card-toggle{
-  font-size:11px;color:#58a6ff;cursor:pointer;user-select:none;
-  margin-top:2px;display:inline-block;transition:color .15s;
-}
-.card-toggle:hover{color:#79c0ff}
-
-/* ── cards grid ── */
-.cards-grid{display:grid;grid-template-columns:1fr;gap:0}
-@media(min-width:1400px){
-  .cards-grid{grid-template-columns:1fr 1fr}
-  .cards-grid .card:nth-child(odd){margin-right:4px}
-  .cards-grid .card:nth-child(even){margin-left:4px}
-}
-
-/* ── search highlight ── */
-mark.search-hl{background:#3c2d0a;color:#f0b90b;padding:0 2px;border-radius:2px}
-
-/* ── summary doc ── */
-.summary-doc{
-  background:#0d1117;border:1px solid #21262d;border-radius:8px;
-  padding:24px 28px;line-height:1.8;font-size:14px;
-}
-.summary-doc h2{color:#f0b90b;font-size:20px;margin-bottom:14px;font-weight:700}
-.summary-doc h3{color:#e6edf3;font-size:15px;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #21262d}
-.summary-doc h4{color:#c9d1d9;font-size:13px;margin:12px 0 6px}
-.summary-doc strong{color:#f0b90b;font-weight:600}
-.summary-doc li{color:#8b949e;margin:2px 0 2px 16px}
-.summary-doc pre{background:#080c10;padding:12px;border-radius:4px;overflow-x:auto;font-size:11px;color:#484f58;border:1px solid #161b22}
-.summary-doc div{margin-bottom:10px}
-
-/* ── empty ── */
-.empty{text-align:center;padding:60px;color:#21262d;font-size:14px}
-.empty::before{content:'📭';display:block;font-size:40px;margin-bottom:12px}
-
-/* ── history table ── */
-.history-table{width:100%;font-size:11px;border-collapse:collapse;margin-top:6px}
-.history-table th{color:#484f58;text-align:left;padding:4px 10px;border-bottom:1px solid #21262d;font-weight:500}
-.history-table td{color:#c9d1d9;padding:4px 10px}
-.history-table tbody tr:hover{background:#161b22}
-
-/* ── scrollbar ── */
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#21262d;border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:#30363d}
-
-/* ── mobile ── */
-@media(max-width:768px){
-  .layout{flex-direction:column}
-  .sidebar{width:100%;border-right:none;border-bottom:1px solid #21262d;padding:12px}
-  .date-list{display:flex;gap:4px;overflow-x:auto;flex-wrap:wrap}
-  .date-list li{white-space:nowrap;font-size:12px}
-  .topbar{padding:10px 14px}
-  .topbar h1{font-size:16px}
-  .main{padding:14px 16px}
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>狗哥 ETH 行情决策看板</title>
+  <style>
+    :root{
+      --bg:#080b11;--panel:#10151e;--panel2:#0c1119;--line:#1d2735;--text:#e8eef7;--muted:#8390a3;
+      --green:#36d399;--red:#fb7185;--amber:#f6c453;--blue:#67a3ff;--purple:#a98bff;--cyan:#57d5e6;
+      --shadow:0 18px 44px rgba(0,0,0,.28);--radius:16px;
+    }
+    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+    body{min-height:100vh;background:
+      radial-gradient(1000px 600px at 72% -120px,rgba(103,163,255,.12),transparent 58%),
+      radial-gradient(800px 500px at -100px 20%,rgba(87,213,230,.07),transparent 55%),var(--bg)}
+    .app{max-width:1560px;margin:auto;padding:22px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px}.logo{width:38px;height:38px;border:1px solid #2a3546;border-radius:12px;display:grid;place-items:center;background:#111824;font-weight:800}
+    h1{font-size:19px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .status-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{font-size:12px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#0d121a}.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;background:var(--green);box-shadow:0 0 12px rgba(54,211,153,.8)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:linear-gradient(180deg,rgba(17,23,33,.97),rgba(12,17,25,.97));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .hero{grid-column:span 12;padding:18px 20px;display:grid;grid-template-columns:1.15fr .75fr .85fr;gap:18px;align-items:stretch}
+    .symbol{font-size:14px;color:var(--muted);letter-spacing:.5px}.price{font-size:42px;font-weight:780;letter-spacing:-1.5px;margin:7px 0 4px}.change{font-weight:700;font-size:14px}.up{color:var(--green)}.down{color:var(--red)}
+    .decision{padding:15px;border:1px solid #263245;background:linear-gradient(135deg,rgba(103,163,255,.09),rgba(169,139,255,.05));border-radius:14px}.decision-kicker{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px}.decision-main{font-size:27px;font-weight:800;margin:6px 0}.decision-note{font-size:13px;color:#aeb9c8;line-height:1.65}
+    .trigger{padding:15px;border:1px solid #263245;border-radius:14px}.trigger-title{font-size:12px;color:var(--muted);margin-bottom:10px}.trigger-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed #202a38}.trigger-row:last-child{border:0}.trigger-row b{font-size:13px}.trigger-row span{font-size:12px;color:var(--muted)}
+    .section{padding:16px}.title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.title{font-size:13px;font-weight:750}.hint{font-size:11px;color:var(--muted)}
+    .chart-card{grid-column:span 8}.side-card{grid-column:span 4}.tf-card{grid-column:span 8}.check-card{grid-column:span 4}.scenario-card{grid-column:span 8}.verify-card{grid-column:span 4}.history-card{grid-column:span 12}
+    #chart{width:100%;height:350px;border-radius:12px;background:#0a0f16;display:block}.chart-overlay{position:absolute;left:28px;top:50px;z-index:2;pointer-events:none}.chart-wrap{position:relative}.mini-badges{display:flex;gap:7px;flex-wrap:wrap}.badge{font-size:11px;border:1px solid #273247;color:#9cabbe;border-radius:8px;padding:5px 7px;background:#0b1119}.badge.green{color:var(--green);border-color:rgba(54,211,153,.3)}.badge.red{color:var(--red);border-color:rgba(251,113,133,.3)}.badge.amber{color:var(--amber);border-color:rgba(246,196,83,.3)}
+    .levels{display:flex;flex-direction:column;gap:9px}.level{position:relative;padding:10px 12px;border-radius:10px;background:#0b1119;border:1px solid #1d2735;overflow:hidden}.level:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue)}.level.res:before{background:var(--red)}.level.sup:before{background:var(--green)}.level.mid:before{background:var(--amber)}.level-top{display:flex;justify-content:space-between;gap:10px}.level-name{font-size:12px;color:#b8c2d0}.level-price{font-size:14px;font-weight:800}.level-desc{font-size:11px;color:var(--muted);margin-top:4px}
+    table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 9px;border-bottom:1px solid #1c2634;font-size:12px}th{color:#7f8ca0;font-weight:600}tr:last-child td{border-bottom:0}.dir{font-weight:800}.score{display:inline-flex;min-width:54px;justify-content:center;padding:4px 7px;border-radius:7px;background:#0b1119;border:1px solid #273247}
+    .check-list{display:grid;gap:8px}.check{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;padding:9px 10px;border:1px solid #1f2a39;border-radius:10px;background:#0b1119}.check-icon{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:#14251f;color:var(--green)}.check-icon.wait{background:#282317;color:var(--amber)}.check-icon.no{background:#2d1720;color:var(--red)}.check-name{font-size:12px}.check-state{font-size:11px;color:var(--muted)}
+    .scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.scenario{padding:13px;border:1px solid #202b3b;border-radius:12px;background:#0b1119}.scenario .shead{display:flex;justify-content:space-between;align-items:center}.scenario h3{font-size:13px;margin:0}.prob{font-size:11px;color:var(--muted)}.scenario p{font-size:12px;color:#aeb9c8;line-height:1.6;margin:9px 0}.plan{font-size:11px;padding-top:8px;border-top:1px dashed #263143;color:#9cabbe}.plan b{color:#dce5f2}
+    .metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric{padding:13px;background:#0b1119;border:1px solid #1f2a39;border-radius:11px}.metric .mval{font-size:23px;font-weight:800}.metric .mlab{font-size:11px;color:var(--muted);margin-top:4px}
+    .timeline{display:grid;grid-template-columns:160px 1fr 120px;gap:0}.tl-row{display:contents}.tl-row>div{padding:10px 8px;border-bottom:1px solid #1c2634;font-size:12px}.tl-time{color:#8693a5}.tl-event{color:#c6d0dd}.tl-tag{text-align:right}.footnote{margin-top:12px;color:#647185;font-size:11px;line-height:1.6}
+    .empty{display:grid;place-items:center;height:350px;color:var(--muted);font-size:12px}
+    @media(max-width:1100px){.hero{grid-template-columns:1fr}.chart-card,.side-card,.tf-card,.check-card,.scenario-card,.verify-card{grid-column:span 12}.scenarios{grid-template-columns:1fr}.price{font-size:34px}}
+    @media(max-width:700px){.app{padding:12px}.topbar{align-items:flex-start}.status-row{display:none}.hero{padding:14px}.timeline{grid-template-columns:100px 1fr}.tl-tag{display:none}.grid{gap:10px}}
+  </style>
 </head>
 <body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo">狗</div><div><h1>ETH 行情决策看板</h1><div class="sub">Doge Framework · 收盘确认 / 多级别 / 关键位 / 预案</div></div></div>
+    <div class="status-row"><span class="pill"><span class="dot"></span><span id="apiState">连接 Binance</span></span><span class="pill" id="updatedAt">更新：--</span><span class="pill">15m 主周期</span></div>
+  </header>
 
-<div class="topbar">
-  <h1>狗哥行情分析面板</h1>
-  <span class="meta" id="genTime"></span>
-  <div class="stats">
-    <div class="stat-item"><span class="stat-dot entries"></span>条目 <b class="val" id="statEntries">0</b></div>
-    <div class="stat-item"><span class="stat-dot symbols"></span>品种 <b class="val" id="statSymbols">0</b></div>
-    <div class="stat-item"><span class="stat-dot days"></span>天数 <b class="val" id="statDays">0</b></div>
-  </div>
-  <div class="pos-widget" id="posWidget"></div>
+  <main class="grid">
+    <section class="card hero">
+      <div>
+        <div class="symbol">ETHUSDT PERPETUAL</div>
+        <div class="price" id="price">--</div>
+        <div><span class="change" id="change">--</span> <span class="sub" id="range">24H --</span></div>
+        <div class="mini-badges" style="margin-top:12px"><span class="badge amber" id="regime">结构：等待行情</span><span class="badge" id="volumeBadge">量能：--</span><span class="badge" id="closeBadge">K线：--</span></div>
+      </div>
+      <div class="decision">
+        <div class="decision-kicker">CURRENT DECISION</div>
+        <div class="decision-main" id="decision">等待确认</div>
+        <div class="decision-note" id="decisionNote">不在中间位置猜方向。等待价格触及关键位，并由已收盘 K 线给出确认，再决定是否执行。</div>
+      </div>
+      <div class="trigger">
+        <div class="trigger-title">下一步只看这 3 件事</div>
+        <div class="trigger-row"><b>上破确认</b><span id="upperTrigger">站稳关键压力</span></div>
+        <div class="trigger-row"><b>下破确认</b><span id="lowerTrigger">跌破关键支撑</span></div>
+        <div class="trigger-row"><b>禁止交易</b><span>点差不足 / 中间位 / 未收盘</span></div>
+      </div>
+    </section>
+
+    <section class="card section chart-card">
+      <div class="title-row"><div class="title">15m 实时结构</div><div class="mini-badges"><span class="badge">EMA20</span><span class="badge">关键位</span><span class="badge green">实时 K 线</span></div></div>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+    </section>
+
+    <section class="card section side-card">
+      <div class="title-row"><div class="title">关键位置</div><div class="hint">不是精确点位，是交易区域</div></div>
+      <div class="levels" id="levels"></div>
+      <div class="footnote">当前默认使用仓库示例结构作为 fallback；接入你的本地分析 JSON 后，这里会自动显示最新关键位。</div>
+    </section>
+
+    <section class="card section tf-card">
+      <div class="title-row"><div class="title">多周期共振矩阵</div><div class="hint">方向不是信号；“位置 + 收盘确认 + 点差”才是信号</div></div>
+      <table><thead><tr><th>周期</th><th>趋势</th><th>位置</th><th>动能</th><th>结构评分</th><th>动作</th></tr></thead><tbody id="tfBody"></tbody></table>
+    </section>
+
+    <section class="card section check-card">
+      <div class="title-row"><div class="title">狗哥条件检查</div><div class="hint">越多通过，越值得出手</div></div>
+      <div class="check-list" id="checks"></div>
+    </section>
+
+    <section class="card section scenario-card">
+      <div class="title-row"><div class="title">交易预案</div><div class="hint">先写剧本，行情走到再执行</div></div>
+      <div class="scenarios" id="scenarios"></div>
+    </section>
+
+    <section class="card section verify-card">
+      <div class="title-row"><div class="title">观点验证</div><div class="hint">区分“明确判断”和“等待行情”</div></div>
+      <div class="metric-grid">
+        <div class="metric"><div class="mval">--</div><div class="mlab">已验证胜率</div></div>
+        <div class="metric"><div class="mval">--</div><div class="mlab">明确判断数</div></div>
+        <div class="metric"><div class="mval">--</div><div class="mlab">等待行情</div></div>
+        <div class="metric"><div class="mval">--</div><div class="mlab">验证中</div></div>
+      </div>
+      <div class="footnote">建议以后由验证脚本写入 `dashboard-data.json`，这里自动统计，而不是在前端解析 Markdown。</div>
+    </section>
+
+    <section class="card section history-card">
+      <div class="title-row"><div class="title">最近结构变化</div><div class="hint">只记录会改变决策的事件</div></div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+  </main>
 </div>
-
-<div class="layout">
-  <div class="sidebar">
-    <h3>日期</h3>
-    <ul class="date-list" id="dateList"></ul>
-    <h3 style="margin-top:20px">品种</h3>
-    <div class="sym-filters" id="symFilters"></div>
-  </div>
-  <div class="main">
-    <div class="search-bar">
-      <input type="text" placeholder="搜索：突破、破位、缩量、放量、支撑、压力、三线共振..." id="searchInput">
-      <span class="search-info" id="searchInfo"></span>
-    </div>
-    <div id="content"></div>
-  </div>
-</div>
-
-<script src="data.js?v=20260812112056"></script>
 <script>
-const DATA = window.APP_DATA;
-
-const SYM_CLASS = {
-  ETHUSDT: 'eth', MUUSDT: 'mu', SNDKUSDT: 'sndk', SKHYUSDT: 'skhy'
-};
-const SYM_BADGE = {
-  ETHUSDT: 'badge-eth', MUUSDT: 'badge-mu', SNDKUSDT: 'badge-sndk', SKHYUSDT: 'badge-skhy'
-};
-
-// newest first
-const DATES = DATA.meta.dates.slice().reverse();
-let curDate = DATES[0];
-let curSym = null;
-let searchQ = '';
-
-// ── topbar ──
-document.getElementById('genTime').textContent = '更新 ' + DATA.generated_at;
-document.getElementById('statEntries').textContent = DATA.meta.total_entries;
-document.getElementById('statSymbols').textContent = DATA.meta.symbols.length;
-document.getElementById('statDays').textContent = DATA.meta.dates.length;
-
-// ── positions widget ──
-(function() {
-  var p = DATA.positions || {};
-  var parts = [];
-  if (p.entries && p.entries.length) {
-    var avg = Math.round(p.entries.reduce(function(s,e){return s+e.price;},0) / p.entries.length);
-    parts.push('持仓 ETH 均价 ~' + avg);
-    if (p.stop_loss) parts.push('止损 ' + p.stop_loss);
-    if (p.targets && p.targets.length) parts.push('目标 [' + p.targets.join(', ') + ']');
-  } else {
-    parts.push('<span class="badge-empty">空仓</span>');
-  }
-  if (p.history && p.history.length) {
-    var totalPnl = p.history.reduce(function(s,h){return s + parseFloat(h.pnl);}, 0);
-    var cls = totalPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
-    parts.push('累计 <span class="' + cls + '">' + (totalPnl >= 0 ? '+' : '') + totalPnl.toFixed(1) + '</span>');
-    parts.push('<button class="btn-hist" onclick="toggleHist(event)">历史</button>');
-  }
-  document.getElementById('posWidget').innerHTML = parts.join('');
-})();
-
-window.toggleHist = function(e) {
-  e.stopPropagation();
-  var existing = document.getElementById('histDetail');
-  if (existing) { existing.remove(); return; }
-  var p = DATA.positions || {};
-  if (!p.history || !p.history.length) return;
-  var rows = p.history.map(function(h) {
-    var exit = h.exit || (h.half_exit ? h.half_exit + (h.half_exit2 ? '/' + h.half_exit2 : '') : 'N/A');
-    var pnlCls = parseFloat(h.pnl) >= 0 ? 'pnl-pos' : 'pnl-neg';
-    return '<tr><td>' + h.date + '</td><td>' + h.entry + '</td><td>' + exit + '</td><td class="' + pnlCls + '">' + (parseFloat(h.pnl) >= 0 ? '+' : '') + h.pnl + '</td></tr>';
-  }).join('');
-  var html = '<table class="history-table"><thead><tr><th>日期</th><th>入场</th><th>出场</th><th>盈亏</th></tr></thead><tbody>' + rows + '</tbody></table>';
-  var div = document.createElement('div');
-  div.id = 'histDetail';
-  div.style.cssText = 'position:fixed;top:56px;right:24px;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px 16px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:320px';
-  div.innerHTML = '<div style="font-size:11px;color:#8b949e;margin-bottom:6px;font-weight:600">历史盈亏</div>' + html;
-  document.body.appendChild(div);
-  setTimeout(function() {
-    document.addEventListener('click', function handler() {
-      div.remove();
-      document.removeEventListener('click', handler);
-    });
-  }, 0);
+const fallback = {
+  keyLevels:[
+    {type:'res',name:'套牢 / 出货区',price:'1876–1880',desc:'多次攻顶失败，接近只减不加'},
+    {type:'res',name:'箱体上沿',price:'1874',desc:'重新站稳才有继续上攻资格'},
+    {type:'mid',name:'中部位置',price:'1871.41',desc:'失守代表重心下移'},
+    {type:'sup',name:'多空分界',price:'1866',desc:'连续两根收盘确认最重要'},
+    {type:'sup',name:'生命支撑',price:'1857.5',desc:'下破后结构明显转弱'}
+  ],
+  timeframes:[
+    ['5m','震荡','中部','弱','48','等待'],['15m','偏空','支撑附近','弱','58','等确认'],['30m','震荡','中下部','中性','52','不追'],['1h','震荡','区间内','中性','50','观察'],['2h','偏多','中部','衰减','56','等待'],['4h','偏多','中部','中性','61','只低吸']
+  ],
+  checks:[
+    ['wait','收盘确认','等待关键位收盘确认'],['wait','多级别共振','目前未形成一致方向'],['wait','换手 K','尚未出现高质量切换'],['no','点差空间','中间位盈亏比不足时放弃'],['yes','追涨杀跌过滤','当前策略禁止中间追单'],['yes','仓位纪律','确认后才允许执行']
+  ],
+  scenarios:[
+    {title:'向上突破',prob:'条件触发',text:'15m 有效站上压力区，且下一根不迅速吞没。',plan:'动作：回踩确认后做多 · 止损放回突破区下方 · 分仓止盈'},
+    {title:'箱体延续',prob:'优先等待',text:'上下关键位都没有收盘确认，中间位置来回震荡。',plan:'动作：不做 · 等边界 · 点差不足直接放弃'},
+    {title:'向下破位',prob:'条件触发',text:'连续两根 15m 收盘跌破多空分界，且不是单根下影假破。',plan:'动作：反抽不收回再空 · 不追空 · 先看下一支撑'}
+  ],
+  timeline:[['05:45','跌破箱体中部支撑，重心下移','结构'],['04:30','V 反后再次攻顶失败','压力'],['03:30','再次触及高位但未形成延续','假突破'],['01:45','上破后快速吞没，诱多陷阱','风险']]
 };
 
-// ── sidebar: dates (newest first) ──
-var dateUl = document.getElementById('dateList');
-DATES.forEach(function(d) {
-  var day = DATA.days[d];
-  var cnt = day.type === 'log' ? day.entries.length : 'doc';
-  var li = document.createElement('li');
-  li.innerHTML = d.slice(5) + ' <span class="cnt">' + cnt + '</span>';
-  li.onclick = function() { curDate = d; curSym = null; render(); updateActive(); };
-  dateUl.appendChild(li);
-});
-
-// ── sidebar: symbols ──
-var symDiv = document.getElementById('symFilters');
-var ALL_SYMS = DATA.meta.symbols;
-
-function makeChip(text, sym, isAll) {
-  var span = document.createElement('span');
-  span.className = 'sym-chip';
-  if (isAll) {
-    span.textContent = '全部';
-    span.classList.add('active');
-  } else {
-    span.textContent = text;
-    span.classList.add(SYM_CLASS[sym] || '');
-  }
-  span.onclick = function() {
-    curSym = isAll ? null : sym;
-    render();
-    updateActive();
-  };
-  symDiv.appendChild(span);
+let candles=[];
+function fmt(n,d=2){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function renderStatic(data){
+  document.getElementById('levels').innerHTML=data.keyLevels.map(x=>`<div class="level ${x.type}"><div class="level-top"><div class="level-name">${x.name}</div><div class="level-price">${x.price}</div></div><div class="level-desc">${x.desc}</div></div>`).join('');
+  document.getElementById('tfBody').innerHTML=data.timeframes.map(r=>`<tr><td><b>${r[0]}</b></td><td class="dir">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="score">${r[4]}</span></td><td>${r[5]}</td></tr>`).join('');
+  document.getElementById('checks').innerHTML=data.checks.map(x=>`<div class="check"><div class="check-icon ${x[0]==='wait'?'wait':x[0]==='no'?'no':''}">${x[0]==='yes'?'✓':x[0]==='no'?'×':'·'}</div><div class="check-name">${x[1]}</div><div class="check-state">${x[2]}</div></div>`).join('');
+  document.getElementById('scenarios').innerHTML=data.scenarios.map(x=>`<div class="scenario"><div class="shead"><h3>${x.title}</h3><span class="prob">${x.prob}</span></div><p>${x.text}</p><div class="plan"><b>${x.plan.split('·')[0]}</b>${x.plan.includes('·')?' · '+x.plan.split('·').slice(1).join(' · '):''}</div></div>`).join('');
+  document.getElementById('timeline').innerHTML=data.timeline.map(x=>`<div class="tl-row"><div class="tl-time">${x[0]}</div><div class="tl-event">${x[1]}</div><div class="tl-tag"><span class="badge">${x[2]}</span></div></div>`).join('');
 }
 
-makeChip('全部', null, true);
-ALL_SYMS.forEach(function(s) {
-  makeChip(s.replace('USDT', ''), s, false);
-});
+async function loadLocalData(){
+  try{
+    const r=await fetch('./dashboard-data.json',{cache:'no-store'}); if(!r.ok) throw 0;
+    const d=await r.json(); renderStatic({...fallback,...d});
+    if(d.decision){document.getElementById('decision').textContent=d.decision.title||'等待确认';document.getElementById('decisionNote').textContent=d.decision.note||'';}
+    if(d.triggers){document.getElementById('upperTrigger').textContent=d.triggers.up||'';document.getElementById('lowerTrigger').textContent=d.triggers.down||'';}
+  }catch(e){renderStatic(fallback)}
+}
 
-// ── search ──
-var searchTimer;
-document.getElementById('searchInput').oninput = function() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(function() {
-    searchQ = document.getElementById('searchInput').value.trim().toLowerCase();
-    render();
-  }, 150);
-};
-
-// ── render ──
-function render() {
-  var day = DATA.days[curDate];
-  var content = document.getElementById('content');
-  if (!day) { content.innerHTML = '<div class="empty">无数据</div>'; return; }
-
-  // summary doc
-  if (day.type === 'summary') {
-    content.innerHTML = '<div class="day-header"><span class="day-dot"></span>' + curDate + ' 每日总结</div><div class="summary-doc">' + day.html + '</div>';
-    updateSearchInfo(0);
-    return;
-  }
-
-  // log entries — newest first
-  var entries = day.entries.slice().reverse();
-  if (curSym) entries = entries.filter(function(e) { return e.symbol === curSym; });
-  if (searchQ) entries = entries.filter(function(e) {
-    return (e.summary + e.body).toLowerCase().indexOf(searchQ) !== -1;
-  });
-
-  // group by symbol (keep insertion order = newest first)
-  var groups = {};
-  var symOrderSet = [];
-  entries.forEach(function(e) {
-    if (!groups[e.symbol]) { groups[e.symbol] = []; symOrderSet.push(e.symbol); }
-    groups[e.symbol].push(e);
-  });
-
-  var html = '<div class="day-header"><span class="day-dot"></span>' + curDate + '</div>';
-
-  if (entries.length === 0) {
-    html += '<div class="empty">没有匹配的条目</div>';
-  }
-
-  // use ALL_SYMS order but only for symbols present in filtered entries
-  var displayOrder = [];
-  ALL_SYMS.forEach(function(s) {
-    if (groups[s]) displayOrder.push(s);
-  });
-  // also include any symbols in entries not in ALL_SYMS (shouldn't happen)
-  symOrderSet.forEach(function(s) {
-    if (displayOrder.indexOf(s) === -1) displayOrder.push(s);
-  });
-
-  displayOrder.forEach(function(sym) {
-    var list = groups[sym];
-    if (!list || !list.length) return;
-    // 全部视图：每种展示最新 2 条；单选品种：展示全部
-    var showList = curSym ? list : list.slice(0, 2);
-    var symClass = SYM_CLASS[sym] || '';
-
-    html += '<div class="sym-section">';
-    html += '<div class="sym-title"><span class="badge ' + SYM_BADGE[sym] + '">' + sym.replace('USDT', '') + '</span><span class="count">' + (curSym ? list.length + ' 条' : '最新') + '</span></div>';
-    html += '<div class="cards-grid">';
-
-    showList.forEach(function(e, i) {
-      var bodyId = 'b' + curDate.replace(/-/g, '') + '_' + sym + '_' + i;
-      var summaryText = e.summary || e.body.slice(0, 100);
-      html += '<div class="card ' + symClass + '">' +
-        '<div class="card-header">' +
-          '<span class="card-time">' + esc(e.ts) + '</span>' +
-          '<span class="card-badge ' + SYM_BADGE[sym] + '">' + sym.replace('USDT', '') + '</span>' +
-          (e.period ? '<span class="card-period">周期 ' + esc(e.period) + '</span>' : '') +
-        '</div>' +
-        '<div class="card-summary">' + highlightText(summaryText, searchQ) + '</div>' +
-        '<div class="card-body" id="' + bodyId + '">' + esc(e.body) + '</div>' +
-        '<span class="card-toggle" data-target="' + bodyId + '">展开全文</span>' +
-        '</div>';
-    });
-
-    html += '</div></div>';
-  });
-
-  content.innerHTML = html;
-  updateSearchInfo(entries.length);
-
-  // bind card body toggles
-  var toggles = content.querySelectorAll('.card-toggle');
-  for (var t = 0; t < toggles.length; t++) {
-    toggles[t].onclick = function() {
-      var targetId = this.getAttribute('data-target');
-      var body = document.getElementById(targetId);
-      if (body) {
-        body.classList.toggle('expanded');
-        this.textContent = body.classList.contains('expanded') ? '收起' : '展开全文';
-      }
-    };
+async function loadMarket(){
+  try{
+    const [t,k]=await Promise.all([
+      fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=ETHUSDT').then(r=>r.json()),
+      fetch('https://fapi.binance.com/fapi/v1/klines?symbol=ETHUSDT&interval=15m&limit=120').then(r=>r.json())
+    ]);
+    const p=+t.lastPrice, ch=+t.priceChangePercent;
+    document.getElementById('price').textContent='$'+fmt(p);
+    const ce=document.getElementById('change');ce.textContent=(ch>=0?'+':'')+ch.toFixed(2)+'%';ce.className='change '+(ch>=0?'up':'down');
+    document.getElementById('range').textContent=`24H ${fmt(t.lowPrice)} – ${fmt(t.highPrice)}`;
+    document.getElementById('volumeBadge').textContent='24H量：'+fmt(+t.quoteVolume/1e6,1)+'M USDT';
+    document.getElementById('updatedAt').textContent='更新：'+new Date().toLocaleTimeString('zh-CN',{hour12:false});
+    document.getElementById('apiState').textContent='Binance 实时';
+    candles=k.map(x=>({t:+x[0],o:+x[1],h:+x[2],l:+x[3],c:+x[4],v:+x[5]}));
+    const last=candles[candles.length-1], closed=Date.now() >= last.t+15*60*1000;
+    document.getElementById('closeBadge').textContent='K线：'+(closed?'已收盘':'形成中');
+    inferDecision(p,candles); drawChart();
+  }catch(e){
+    document.getElementById('apiState').textContent='实时行情连接失败';document.querySelector('.dot').style.background='var(--red)';
+    document.getElementById('chart').outerHTML='<div class="empty">无法连接 Binance；其余看板仍可读取本地 dashboard-data.json</div>';
   }
 }
 
-function esc(s) {
-  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function inferDecision(price, cs){
+  if(!cs.length)return;
+  const closes=cs.slice(-24).map(x=>x.c), hi=Math.max(...closes), lo=Math.min(...closes), span=Math.max(1,hi-lo), pos=(price-lo)/span;
+  const ema=(arr,n)=>{let a=2/(n+1),v=arr[0];for(let i=1;i<arr.length;i++)v=arr[i]*a+v*(1-a);return v};
+  const e9=ema(closes,9),e20=ema(closes,20); let title='等待确认',note='价格处于结构中部，暂时没有足够优势。等待关键位置出现收盘确认。',reg='结构：震荡 / 等待';
+  if(pos>.82 && e9>e20){title='接近上沿，不追多';note='短线偏强，但已经靠近近 6 小时高位。优先等突破收盘确认或回踩，不在压力边缘直接追。';reg='结构：偏多 · 临近压力';}
+  else if(pos<.18 && e9<e20){title='接近下沿，不追空';note='短线偏弱，但已经靠近近 6 小时低位。优先等有效破位或假破收回，不在支撑边缘直接追空。';reg='结构：偏空 · 临近支撑';}
+  else if(e9>e20){title='偏多，但等位置';note='短周期动能偏多，位置尚未形成高质量触发。等回踩或关键压力收盘确认。';reg='结构：偏多 · 未触发';}
+  else if(e9<e20){title='偏空，但等位置';note='短周期动能偏空，位置尚未形成高质量触发。等反抽或关键支撑收盘确认。';reg='结构：偏空 · 未触发';}
+  document.getElementById('decision').textContent=title;document.getElementById('decisionNote').textContent=note;document.getElementById('regime').textContent=reg;
 }
 
-function highlightText(text, q) {
-  if (!q) return esc(text);
-  var escaped = esc(text);
-  var qEscaped = esc(q);
-  // split on the query (case-insensitive), preserve original case in output
-  var re = new RegExp('(' + qEscaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
-  return escaped.replace(re, '<mark class="search-hl">$1</mark>');
+function drawChart(){
+  const canvas=document.getElementById('chart'), rect=canvas.getBoundingClientRect(), dpr=window.devicePixelRatio||1;canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height,pad={l:12,r:66,t:16,b:24}, data=candles.slice(-72);if(!data.length)return;
+  const hi=Math.max(...data.map(x=>x.h)),lo=Math.min(...data.map(x=>x.l)),range=hi-lo||1;const xStep=(W-pad.l-pad.r)/data.length;const y=p=>pad.t+(hi-p)/range*(H-pad.t-pad.b);const x=i=>pad.l+i*xStep+xStep/2;
+  ctx.clearRect(0,0,W,H);ctx.strokeStyle='#17212e';ctx.lineWidth=1;
+  for(let i=0;i<5;i++){let yy=pad.t+i*(H-pad.t-pad.b)/4;ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();const val=hi-i*range/4;ctx.fillStyle='#6f7c8f';ctx.font='11px sans-serif';ctx.fillText(val.toFixed(1),W-pad.r+8,yy+4)}
+  const closes=data.map(x=>x.c), ema=[];let e=closes[0],a=2/21;closes.forEach(c=>{e=c*a+e*(1-a);ema.push(e)});ctx.strokeStyle='#67a3ff';ctx.lineWidth=1.4;ctx.beginPath();ema.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();
+  data.forEach((c,i)=>{const xx=x(i), up=c.c>=c.o, col=up?'#36d399':'#fb7185';ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(xx,y(c.h));ctx.lineTo(xx,y(c.l));ctx.stroke();let top=y(Math.max(c.o,c.c)),bot=y(Math.min(c.o,c.c)),bw=Math.max(2,xStep*.55);ctx.fillRect(xx-bw/2,top,bw,Math.max(1,bot-top))});
+  const last=data[data.length-1];ctx.setLineDash([4,4]);ctx.strokeStyle='#8a98aa';ctx.beginPath();ctx.moveTo(pad.l,y(last.c));ctx.lineTo(W-pad.r,y(last.c));ctx.stroke();ctx.setLineDash([]);
 }
-
-function updateSearchInfo(n) {
-  document.getElementById('searchInfo').textContent = searchQ ? '匹配 ' + n + ' 条' : '';
-}
-
-function updateActive() {
-  var lis = dateUl.querySelectorAll('li');
-  lis.forEach(function(li, i) {
-    li.classList.toggle('active', DATES[i] === curDate);
-  });
-  var chips = symDiv.querySelectorAll('.sym-chip');
-  chips.forEach(function(c, i) {
-    if (i === 0) c.classList.toggle('active', !curSym);
-    else c.classList.toggle('active', ALL_SYMS[i - 1] === curSym);
-  });
-}
-
-// init
-updateActive();
-render();
+window.addEventListener('resize',()=>{if(candles.length)drawChart()});
+loadLocalData();loadMarket();setInterval(loadMarket,60000);
 </script>
 </body>
 </html>

@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>狗哥 ETH 行情决策看板 V3</title>
+<title>狗哥行情决策看板 V4</title>
 <style>
 :root{
   --bg:#090c10;--panel:#0f141a;--panel2:#121820;--line:#202833;--line2:#293442;
@@ -53,22 +53,31 @@ button{cursor:pointer}
 .tl{position:relative}.tl:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:2px;background:#26313c}.tl.long:before{background:var(--green)}.tl.short:before{background:var(--red)}.tl.wait:before{background:var(--gold)}
 @media(max-width:820px){.decision-side{flex-direction:column}.signal-score{min-width:0;width:100%}.distance-strip{grid-template-columns:1fr}.path-grid{grid-template-columns:1fr}.canvas-wrap{height:220px}}
 
+
+/* V4 — 当前情况 / 下一步计划 / 多品种修复 */
+.radar-label{margin-top:1px}.radar-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:12px}.radar-card{appearance:none;text-align:left;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#0f151c,#0c1117);color:var(--text);min-width:0;transition:.16s}.radar-card:hover{border-color:#3b4857;transform:translateY(-1px)}.radar-card.active{border-color:#665313;background:linear-gradient(180deg,#18160d,#10120d);box-shadow:inset 0 0 0 1px rgba(240,185,11,.08)}.radar-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.radar-name{font-size:11px;font-weight:800;white-space:nowrap}.radar-code{font:8px Consolas,monospace;color:var(--dim);margin-left:5px}.radar-time{font:8px Consolas,monospace;color:var(--dim)}.radar-state{font-size:10px;font-weight:800;margin-bottom:5px}.radar-summary{font-size:9px;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.radar-card.long .radar-state{color:var(--green)}.radar-card.short .radar-state{color:var(--red)}.radar-card.wait .radar-state{color:var(--gold)}.radar-card.neutral .radar-state{color:#a7b1bc}
+.situation-flow{display:grid;grid-template-columns:1fr 20px 1fr 20px 1fr;align-items:stretch;margin:0 0 10px}.situation-step{padding:9px 10px;border:1px solid #1b242d;background:#0b1015;border-radius:8px;min-width:0}.situation-step b{display:block;font-size:8px;letter-spacing:.6px;color:var(--dim);margin-bottom:4px}.situation-step strong{display:block;font-size:11px;color:#dfe6ed;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.situation-step span{display:block;font-size:9px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.situation-step.now{border-color:#31404f}.situation-step.next{border-color:#58470e}.situation-step.next strong{color:var(--gold)}.situation-step.gate{border-color:#24402f}.situation-step.gate strong{color:#8ed9ab}.flow-arrow{display:grid;place-items:center;color:#3e4b58;font-size:13px}
+.sym-chip{min-height:43px;text-align:left;padding:6px 7px}.sym-chip strong{display:block;font-size:10px;line-height:1.1}.sym-chip small{display:block;font:7px Consolas,monospace;margin-top:3px;opacity:.72}.sym-chip.active small{color:#473b0f}.instrument-tag{font-size:8px;color:var(--dim);margin-left:5px}.live-symbol{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.decision-symbol{font-size:9px;color:var(--dim);margin-top:4px}.path-card.long span,.path-card.short span{display:block}.chart-source{margin-left:auto;font-size:8px;color:var(--dim)}
+@media(max-width:1180px){.radar-grid{grid-template-columns:1fr 1fr}}@media(max-width:820px){.radar-grid{grid-template-columns:1fr 1fr}.situation-flow{grid-template-columns:1fr}.flow-arrow{height:15px;transform:rotate(90deg)}.radar-summary{display:none}}@media(max-width:480px){.radar-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH OPINION · V3</small></div></div>
-    <div class="live-strip"><span class="live-dot"></span><span class="live-symbol">ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
+    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V4</small></div></div>
+    <div class="live-strip"><span class="live-dot"></span><span class="live-symbol" id="liveSymbol">ETH · ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
     <div class="top-meta"><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
   </header>
   <div class="shell">
     <aside class="sidebar">
       <div class="side-title">日期</div><ul class="date-list" id="dateList"></ul>
       <div class="side-title">品种</div><div class="sym-filters" id="symFilters"></div>
-      <div class="side-note">第一屏只回答一个问题：<br><b style="color:#c6d0db">现在该不该动手？</b><br>详细分析与历史记录放在下方。</div>
+      <div class="side-note">第一屏依次回答：<br><b style="color:#c6d0db">现在是什么状态？</b><br>接下来盯哪里？<br>满足什么条件才行动？</div>
     </aside>
     <main class="main">
+      <div class="section-label radar-label"><h2>全品种状态雷达</h2><span class="sub">ETH · 闪迪 · SK 海力士 · 镁光｜点击切换</span></div>
+      <div class="radar-grid" id="symbolRadar"></div>
       <div class="hero-grid">
         <section class="panel decision">
           <div class="decision-head">
@@ -77,6 +86,13 @@ button{cursor:pointer}
           </div>
           <div class="decision-meta"><span class="meta-chip" id="opinionTime">观点 --</span><span class="meta-chip" id="freshness">数据状态 --</span></div>
           <div class="decision-summary" id="decisionSummary">正在读取最新分析。</div>
+          <div class="situation-flow">
+            <div class="situation-step now"><b>现在</b><strong id="phaseTitle">读取中</strong><span id="phaseDetail">正在判断当前市场阶段</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="situation-step next"><b>接下来</b><strong id="nextTask">等待关键位</strong><span id="nextDetail">先观察，再决定是否行动</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="situation-step gate"><b>行动门槛</b><strong id="actionGate">等待确认</strong><span id="actionGateDetail">条件未满足前不提前下注</span></div>
+          </div>
           <div class="distance-strip" id="distanceStrip"><div class="distance-item res"><b>最近压力</b><strong>--</strong></div><div class="distance-item current"><b>当前价格</b><strong>--</strong></div><div class="distance-item sup"><b>最近支撑</b><strong>--</strong></div></div>
           <div class="decision-rule">
             <div class="rule trigger"><b>当前触发条件</b><span id="triggerRule">--</span></div>
@@ -86,7 +102,7 @@ button{cursor:pointer}
           <div class="path-grid"><div class="path-card long"><b>↑ 多头路径</b><span id="longPlan">等待向上触发条件</span></div><div class="path-card short"><b>↓ 空头路径</b><span id="shortPlan">等待向下触发条件</span></div></div>
         </section>
         <section class="panel chart-panel">
-          <div class="chart-head"><div><div class="eyebrow">Market replay / 行情联动</div><div class="chart-subline"><div class="chart-title">ETHUSDT K 线</div><span class="chart-mode live" id="chartMode">实时</span><span class="chart-hint">关键位自动叠加</span></div></div><div class="chart-tabs" id="chartTabs"><button data-int="5m">5m</button><button data-int="15m" class="active">15m</button><button data-int="1h">1H</button></div></div>
+          <div class="chart-head"><div><div class="eyebrow">Market replay / 行情联动</div><div class="chart-subline"><div class="chart-title" id="chartTitle">ETHUSDT K 线</div><span class="chart-mode live" id="chartMode">实时</span><span class="chart-hint">关键位自动叠加</span></div></div><div class="chart-tabs" id="chartTabs"><button data-int="5m">5m</button><button data-int="15m" class="active">15m</button><button data-int="1h">1H</button></div></div>
           <div class="canvas-wrap"><canvas id="klineCanvas"></canvas><div class="chart-error" id="chartError">正在连接 Binance...</div></div>
           <div class="chart-level-legend"><span><i class="legend-dot res"></i>压力</span><span><i class="legend-dot pivot"></i>关键/分界</span><span><i class="legend-dot sup"></i>支撑</span><span>底部柱为成交量</span></div>
         </section>
@@ -105,13 +121,21 @@ button{cursor:pointer}
     </main>
   </div>
 </div>
-<script src="data.js?v=20260812113643"></script>
+<script src="data.js?v=20260812115230"></script>
 <script>
 (function(){
 'use strict';
 const DATA=window.APP_DATA||{meta:{dates:[],symbols:[],total_entries:0},days:{},positions:{}};
 const SYM_CLASS={ETHUSDT:'eth',MUUSDT:'mu',SNDKUSDT:'sndk',SKHYUSDT:'skhy'};
 const SYM_BADGE={ETHUSDT:'badge-eth',MUUSDT:'badge-mu',SNDKUSDT:'badge-sndk',SKHYUSDT:'badge-skhy'};
+const SYMBOL_META={
+  ETHUSDT:{name:'ETH',full:'Ethereum',code:'ETH',kind:'加密永续'},
+  SNDKUSDT:{name:'闪迪',full:'SanDisk',code:'SNDK',kind:'TradFi 永续'},
+  SKHYUSDT:{name:'海力士',full:'SK hynix',code:'SKHY',kind:'TradFi 永续'},
+  MUUSDT:{name:'镁光',full:'Micron',code:'MU',kind:'TradFi 永续'}
+};
+const symMeta=s=>SYMBOL_META[s]||{name:String(s||'').replace('USDT',''),full:String(s||''),code:String(s||'').replace('USDT',''),kind:'永续'};
+function symDisplay(s,withCode=true){const m=symMeta(s);return withCode?`${m.name} · ${m.code}`:m.name}
 const DATES=(DATA.meta.dates||[]).slice().reverse();
 let curDate=DATES[0]||''; let curSym=(DATA.meta.symbols||[]).includes('ETHUSDT')?'ETHUSDT':null; let searchQ=''; let chartInterval='15m'; let chartData=[]; let lastPrice=null; let currentLevels=[]; let currentEntry=null;
 const $=id=>document.getElementById(id);
@@ -126,31 +150,44 @@ function deriveDecision(e){
   if(!e)return {state:'暂无数据',cls:'state-neutral',bias:'结构判断 --',summary:'当前日期没有可读取的分析。',trigger:'--',watch:'--',avoid:'--'};
   const t=(e.summary||'')+' '+(e.body||'');
   const wait=/不动手|等方向|宁可空仓|位置不到|不上不下|没方向|别手痒|等.*确认|中间不动手|别急着动手/.test(t);
-  const longScore=scoreKeywords(t,['偏多','多头结构','多头格局','重心上移','看多','试多','接多','做多','共振往上','继续看多'],['偏空','空头结构','空头格局','重心下移','做空','高空','短空']);
+  const longScore=scoreKeywords(t,['偏多','多头结构','多头趋势','多头格局','多头控盘','重心上移','看多','试多','接多','做多','共振往上','多周期共振','同步转强','上涨中继','大阳','长阳','打穿','资金进场','继续看多'],['偏空','空头结构','空头格局','重心下移','做空','高空','短空']);
   let state,cls;
-  if(wait){state='等待确认';cls='state-wait'} else if(longScore>=2){state='偏多执行';cls='state-long'} else if(longScore<=-2){state='偏空执行';cls='state-short'} else {state='观望 / 对抗';cls='state-neutral'}
-  let bias=longScore>=2?'大结构偏多':longScore<=-2?'大结构偏空':'多空对抗';
+  if(wait){state='等待确认';cls='state-wait'} else if(longScore>=2){state='偏多执行';cls='state-long'} else if(longScore===1){state='偏多观察';cls='state-long'} else if(longScore<=-2){state='偏空执行';cls='state-short'} else if(longScore===-1){state='偏空观察';cls='state-short'} else {state='观望 / 对抗';cls='state-neutral'}
+  let bias=longScore>=1?'大结构偏多':longScore<=-1?'大结构偏空':'多空对抗';
   const trigger=findSentence(t,['站稳','突破','破了','跌破','放量','回踩不破','收盘'], '等待关键位出现收盘确认');
   const watch=findSentence(t,['盯盘','盯死','关键位','支撑','压力','分水岭'], compact(e.summary||e.body,80));
   const avoid=findSentence(t,['不追','别追','不动手','宁可','别急','别手痒'], '位置不到不动手，不在区间中部赌方向');
   return {state,cls,bias,summary:compact(e.summary||e.body,190),trigger,watch,avoid,longScore};
 }
+function levelClause(sent,numStart,numLen){
+  const cuts='，,：:';let l=-1,r=sent.length;
+  for(let i=numStart-1;i>=0;i--){if(cuts.includes(sent[i])){l=i;break}}
+  for(let i=numStart+numLen;i<sent.length;i++){if(cuts.includes(sent[i])){r=i;break}}
+  return sent.slice(l+1,r);
+}
 function extractLevels(text){
-  const s=splitSentences(text), map=new Map();
-  s.forEach(sent=>{
-    const nums=sent.match(/(?<!\d)(1[5-9]\d{2}(?:\.\d+)?|2\d{3}(?:\.\d+)?)(?!\d)/g)||[];
-    nums.forEach(num=>{
-      const v=parseFloat(num); if(v<1500||v>3000)return;
+  const sentences=splitSentences(text), map=new Map();
+  const priceWords=/压力|阻力|支撑|防守|生命线|分水岭|关键位|突破|跌破|站稳|失守|回踩|反抽|高点|低点|上方|下方|目标|区间|附近|位置|摸到|看\d|攻到|守住/;
+  sentences.forEach(sent=>{
+    if(!priceWords.test(sent))return;
+    const re=/(?<![\dA-Za-z])(\d{2,5}(?:\.\d+)?)(?![\dA-Za-z%])/g; let m;
+    while((m=re.exec(sent))){
+      const raw=m[1],v=parseFloat(raw),after=sent.slice(m.index+raw.length,m.index+raw.length+18),clause=levelClause(sent,m.index,raw.length);
+      if(!Number.isFinite(v)||v<20||v===2026||v===2025||/^[Kk万%]/.test(after)||/^分钟/.test(after))continue;
+      if(lastPrice && (v<lastPrice*.55 || v>lastPrice*1.55))continue;
       let type='pivot',kind='观察位';
-      if(/压力|上方|高点|冲不过|套牢|阻力/.test(sent)){type='res';kind='压力'}
-      if(/支撑|下方|防守|生命线|不破|底/.test(sent)){type='sup';kind='支撑'}
-      if(/分水岭|多空|关键位|突破位|换手/.test(sent)){type='pivot';kind='分界'}
-      const key=v.toFixed(2); if(!map.has(key))map.set(key,{v,type,kind,desc:compact(sent,55)});
-    })
+      if(/支撑|防守|生命线|下方|低点|不破|守住|回踩|附近接/.test(clause)){type='sup';kind='支撑'}
+      else if(/压力|阻力|上方|高点|冲不过|目标|摸到/.test(clause)){type='res';kind='压力'}
+      else if(/分水岭|关键位|突破|跌破|站稳|失守|换手/.test(clause)){type='pivot';kind='分界'}
+      else if(lastPrice){type=v>lastPrice?'res':'sup';kind=v>lastPrice?'压力':'支撑'}
+      const key=v.toFixed(3),item={v,type,kind,desc:compact(sent,62)},old=map.get(key);
+      if(!old||old.kind==='观察位'&&kind!=='观察位')map.set(key,item);
+    }
   });
   let a=[...map.values()];
-  a.sort((x,y)=>{const rank={res:0,pivot:1,sup:2};return rank[x.type]-rank[y.type]||y.v-x.v});
-  return a.slice(0,6);
+  if(lastPrice)a.sort((x,y)=>Math.abs(x.v-lastPrice)-Math.abs(y.v-lastPrice));
+  else a.sort((x,y)=>y.v-x.v);
+  return a.slice(0,7);
 }
 function timeframeStatus(text,tf){
   const aliases={"5m":['5m','5分钟'],"15m":['15m','15分钟'],"30m":['30m','30分钟'],"1H":['1H','1h','1小时'],"4H":['4H','4h','4小时']};
@@ -159,6 +196,27 @@ function timeframeStatus(text,tf){
   const bull=scoreKeywords(hit,['上移','阳线','偏多','多头','走强','放量拉升','站稳','反弹','共振往上'],['下移','阴线','偏空','空头','走弱','阴跌','破位']);
   return bull>=2?{cls:'bull',label:'偏多',detail:compact(hit,28)}:bull<=-2?{cls:'bear',label:'偏空',detail:compact(hit,28)}:{cls:'neutral',label:'对抗',detail:compact(hit,28)};
 }
+
+function marketPhase(text,d){
+  if(/上涨中继|高位强势整理|冲高后换手|换手消化/.test(text))return {title:'强势整理 / 换手',detail:'趋势尚强，但短线在消化涨幅，重点看回踩是否守住。'};
+  if(/缩量横盘|窄区间|反复摩擦|漂的状态/.test(text))return {title:'缩量横盘 / 等选择',detail:'重心暂未有效脱离当前区间，优先等突破或破位确认。'};
+  if(/多头趋势|多头结构|同步转强|多周期共振|放量.*(?:大阳|长阳|拉升)/.test(text))return {title:'多头主导',detail:'大结构偏强，执行上更适合等回踩或二次确认，不追第一段。'};
+  if(/空头趋势|空头结构|阴跌|放量.*(?:大阴|下杀)|走弱/.test(text))return {title:'空头主导',detail:'结构偏弱，优先等反抽失败或支撑确认失守。'};
+  if(/横盘|震荡|对抗|拉扯/.test(text))return {title:'区间对抗',detail:'多空没有形成压倒性优势，区间中部的赔率通常较差。'};
+  return {title:d.state,detail:'以最新观点的关键位和收盘确认作为下一步执行依据。'};
+}
+function currentAction(text,d){
+  if(/不动手|等方向|宁可空仓|别手痒|别急着动手|不上不下/.test(text))return '先不动手';
+  if(d.cls==='state-long')return /不追|别追/.test(text)?'偏多，但只等回踩/确认':'偏多，顺势等入场条件';
+  if(d.cls==='state-short')return /不追|别追/.test(text)?'偏空，但只等反抽/确认':'偏空，顺势等入场条件';
+  return '先观察，不在中间赌方向';
+}
+function nextTaskInfo(text,d){
+  const focus=findSentence(text,['盯盘就看','盯住','盯死','就看','等一个','等区间','等待','关键压力','关键支撑'],d.watch);
+  const gate=findSentence(text,['站稳','跌破','突破','失守','回踩不破','反抽不过','放量'],d.trigger);
+  return {focus:compact(focus,70),gate:compact(gate,70)};
+}
+function radarClass(cls){return cls.includes('long')?'long':cls.includes('short')?'short':cls.includes('wait')?'wait':'neutral'}
 
 function isLatestDate(){return curDate===DATES[0]}
 function entryDateTime(e){
@@ -194,6 +252,8 @@ function directionalPlan(text,dir){
   for(const k of keys){const hit=sentences.find(x=>x.includes(k));if(hit)return compact(hit,100)}
   return dir==='long'?'关键压力收盘站稳后，再等回踩/换手确认，不追第一根。':'关键支撑收盘失守后，再等反抽不过/换手确认，不在支撑上追空。';
 }
+function formatPrice(v){if(v===null||v===undefined||!Number.isFinite(+v))return '--';return (+v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V4`}
 function nearestLevels(price,levels){
   if(!price||!levels.length)return {res:null,sup:null};
   const vals=levels.map(x=>x.v).filter(Number.isFinite);
@@ -204,18 +264,19 @@ function nearestLevels(price,levels){
 function fmtDist(level,price){if(!level||!price)return '';const d=level-price,p=d/price*100;return `${d>=0?'+':''}${d.toFixed(1)} · ${d>=0?'+':''}${p.toFixed(2)}%`}
 function updateDistanceStrip(){
   const box=$('distanceStrip');if(!box)return;const n=nearestLevels(lastPrice,currentLevels);
-  const p=lastPrice?lastPrice.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'--';
-  box.innerHTML=`<div class="distance-item res"><b>最近压力</b><strong>${n.res?n.res.toFixed(2):'--'}</strong><span>${n.res?fmtDist(n.res,lastPrice):''}</span></div><div class="distance-item current"><b>当前价格</b><strong>${p}</strong><span>${isLatestDate()?'LIVE':'参考现价'}</span></div><div class="distance-item sup"><b>最近支撑</b><strong>${n.sup?n.sup.toFixed(2):'--'}</strong><span>${n.sup?fmtDist(n.sup,lastPrice):''}</span></div>`;
+  const p=lastPrice?formatPrice(lastPrice):'--';
+  box.innerHTML=`<div class="distance-item res"><b>最近压力</b><strong>${n.res?formatPrice(n.res):'--'}</strong><span>${n.res?fmtDist(n.res,lastPrice):''}</span></div><div class="distance-item current"><b>当前价格</b><strong>${p}</strong><span>${isLatestDate()?'LIVE':'参考现价'}</span></div><div class="distance-item sup"><b>最近支撑</b><strong>${n.sup?formatPrice(n.sup):'--'}</strong><span>${n.sup?fmtDist(n.sup,lastPrice):''}</span></div>`;
 }
 
 function renderDecision(){
-  const sym=curSym||'ETHUSDT';const e=latestEntry(curDate,sym);currentEntry=e;const d=deriveDecision(e);
+  const sym=curSym||'ETHUSDT',meta=symMeta(sym),e=latestEntry(curDate,sym);currentEntry=e;const d=deriveDecision(e);
   $('decisionState').textContent=d.state;$('decisionState').className='decision-state '+d.cls;$('biasBadge').textContent=d.bias;$('decisionSummary').textContent=d.summary;$('triggerRule').textContent=d.trigger;$('watchRule').textContent=d.watch;$('avoidRule').textContent=d.avoid;
   const text=(e?.summary||'')+' '+(e?.body||''); currentLevels=extractLevels(text);
   const score=executionScore(text,d);$('signalScore').textContent=score;$('signalGrade').textContent=score>=75?'高准备度 · 不是胜率':score>=55?'中等准备度 · 不是胜率':'低准备度 · 继续等';
-  $('opinionTime').textContent=e?`观点 ${e.ts||e.period||'--'}`:'观点 --';const f=freshnessInfo(e);$('freshness').textContent=f.label;$('freshness').className='meta-chip '+f.cls;
+  $('opinionTime').textContent=e?`${meta.name}观点 ${e.ts||e.period||'--'}`:`${meta.name}观点 --`;const f=freshnessInfo(e);$('freshness').textContent=f.label;$('freshness').className='meta-chip '+f.cls;
+  const phase=marketPhase(text,d),next=nextTaskInfo(text,d);$('phaseTitle').textContent=phase.title;$('phaseDetail').textContent=phase.detail;$('nextTask').textContent=currentAction(text,d);$('nextDetail').textContent=next.focus||'等待关键位进一步明确';$('actionGate').textContent=next.gate||'等待收盘确认';$('actionGateDetail').textContent=d.avoid||'条件未满足前不提前下注';
   $('longPlan').textContent=directionalPlan(text,'long');$('shortPlan').textContent=directionalPlan(text,'short');
-  $('levelList').innerHTML=currentLevels.length?currentLevels.map(x=>`<div class="level ${x.type}"><span class="kind">${x.kind}</span><span class="price">${x.v.toFixed(x.v%1?2:0)}</span><span class="desc" title="${esc(x.desc)}">${esc(x.desc)}</span></div>`).join(''):'<div class="empty" style="padding:22px">暂未提取到 ETH 关键价位</div>';
+  $('levelList').innerHTML=currentLevels.length?currentLevels.map(x=>`<div class="level ${x.type}"><span class="kind">${x.kind}</span><span class="price">${formatPrice(x.v)}</span><span class="desc" title="${esc(x.desc)}">${esc(x.desc)}</span></div>`).join(''):`<div class="empty" style="padding:22px">暂未提取到 ${esc(meta.name)} 关键价位</div>`;
   const tfs=['5m','15m','30m','1H','4H'];
   $('tfGrid').innerHTML=tfs.map(tf=>{const r=timeframeStatus(text,tf);const extra=r.label==='未明确'?' unknown':'';return `<div class="tf ${r.cls}${extra}"><div class="name">${tf}</div><div class="status">${r.label==='未明确'?'未纳入':r.label}</div><div class="detail" title="${esc(r.detail)}">${esc(r.detail)}</div></div>`}).join('')+`<div class="tf neutral"><div class="name">共振</div><div class="status">${/共振/.test(text)?'已提及':'未形成'}</div><div class="detail">${/共振/.test(text)?'正文出现共振描述':'等待同向确认'}</div></div>`;
   const checks=[
@@ -227,33 +288,36 @@ function renderDecision(){
     ['当前可执行性',!(/不动手|等方向|宁可空仓|别手痒/.test(text)),waitClass(text)]
   ];
   $('checks').innerHTML=checks.map(x=>`<div class="check ${x[2]}"><i></i><span>${x[0]}</span><b>${x[2]==='ok'?'通过':x[2]==='bad'?'不通过':'等待'}</b></div>`).join('');
-  $('rawLatest').innerHTML=e?`<div class="panel" style="padding:16px"><div class="section-label"><h2>${esc(sym)} · ${esc(e.ts)} · 周期 ${esc(e.period)}</h2><span class="sub">原始最新观点</span></div><div style="white-space:pre-line;line-height:1.85;color:#aab6c2;font-size:12px">${esc(e.body)}</div></div>`:'<div class="empty">无最新观点</div>';
-  updateDistanceStrip();if(chartData.length)drawChart();
+  $('rawLatest').innerHTML=e?`<div class="panel" style="padding:16px"><div class="section-label"><h2>${esc(meta.name)} · ${esc(sym)} · ${esc(e.ts)} · 周期 ${esc(e.period)}</h2><span class="sub">原始最新观点</span></div><div style="white-space:pre-line;line-height:1.85;color:#aab6c2;font-size:12px">${esc(e.body)}</div></div>`:'<div class="empty">无最新观点</div>';
+  updateInstrumentUI();updateDistanceStrip();if(chartData.length)drawChart();
 }
 function waitClass(t){return /不动手|等方向|宁可空仓|别手痒|不上不下/.test(t)?'bad':(/等|确认/.test(t)?'warn':'ok')}
 function renderTimeline(){const list=allEntries(curDate,curSym||'ETHUSDT').slice(-8).reverse();$('timeline').innerHTML=list.length?list.map(e=>{const d=deriveDecision(e);const tc=d.cls.includes('long')?'long':d.cls.includes('short')?'short':d.cls.includes('wait')?'wait':'';return `<div class="tl ${tc}"><div class="time">${esc(e.ts||e.period)}</div><div class="tl-state ${d.cls.replace('state-','')==='long'?'up':d.cls.replace('state-','')==='short'?'down':''}">${esc(d.state)} · ${esc(d.bias)}</div><p>${esc(e.summary||compact(e.body,100))}</p></div>`}).join(''):'<div class="empty">暂无结构变化</div>'}
-function renderSidebar(){const ul=$('dateList');ul.innerHTML='';DATES.forEach(d=>{const day=DATA.days[d];const li=document.createElement('li');li.className=d===curDate?'active':'';li.innerHTML=`<span>${d.slice(5)}</span><span class="cnt">${day.type==='log'?day.entries.length:'doc'}</span>`;li.onclick=()=>{curDate=d;renderAll();loadChart()};ul.appendChild(li)});const div=$('symFilters');div.innerHTML='';const syms=DATA.meta.symbols||[];syms.forEach(s=>{const b=document.createElement('button');b.className='sym-chip '+(s===curSym?'active':'');b.textContent=s.replace('USDT','');b.onclick=()=>{curSym=s;renderAll()};div.appendChild(b)})}
-function renderLogs(){const day=DATA.days[curDate],content=$('content');if(!day){content.innerHTML='<div class="empty">无数据</div>';return}if(day.type==='summary'){content.innerHTML=`<div class="summary-doc">${day.html}</div>`;return}let entries=day.entries.slice().reverse();if(curSym)entries=entries.filter(e=>e.symbol===curSym);if(searchQ)entries=entries.filter(e=>((e.summary||'')+(e.body||'')).toLowerCase().includes(searchQ));const groups={};entries.forEach(e=>(groups[e.symbol]||(groups[e.symbol]=[])).push(e));let html=`<div class="day-header"><span class="day-dot"></span>${curDate} · ${curSym||'全部品种'}</div>`;Object.keys(groups).forEach(sym=>{html+=`<div class="sym-section"><div class="sym-title"><span class="badge ${SYM_BADGE[sym]||''}">${sym.replace('USDT','')}</span><span class="count">${groups[sym].length} 条</span></div><div class="cards-grid">`;groups[sym].forEach((e,i)=>{const id='body_'+sym+'_'+i;html+=`<div class="card ${SYM_CLASS[sym]||''}"><div class="card-header"><span class="card-time">${esc(e.ts)}</span><span class="card-period">周期 ${esc(e.period)}</span></div><div class="card-summary">${highlight(e.summary||compact(e.body,110),searchQ)}</div><div class="card-body" id="${id}">${esc(e.body)}</div><span class="card-toggle" data-target="${id}">展开全文</span></div>`});html+='</div></div>'});content.innerHTML=html||'<div class="empty">没有匹配条目</div>';$('searchInfo').textContent=searchQ?'匹配 '+entries.length+' 条':'';content.querySelectorAll('.card-toggle').forEach(x=>x.onclick=function(){const b=$(this.dataset.target);b.classList.toggle('expanded');this.textContent=b.classList.contains('expanded')?'收起':'展开全文'})}
+function selectSymbol(s){if(!s||s===curSym)return;curSym=s;lastPrice=null;chartData=[];currentLevels=[];renderAll();loadTicker();loadChart()}
+function renderRadar(){const box=$('symbolRadar');if(!box)return;const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));const syms=order.concat(rest);box.innerHTML=syms.map(sym=>{const e=latestEntry(curDate,sym),d=deriveDecision(e),m=symMeta(sym);return `<button class="radar-card ${radarClass(d.cls)} ${sym===curSym?'active':''}" data-sym="${sym}"><div class="radar-top"><div><span class="radar-name">${esc(m.name)}</span><span class="radar-code">${esc(m.code)}</span></div><span class="radar-time">${esc(e?.ts||'--')}</span></div><div class="radar-state">${esc(d.state)} · ${esc(d.bias.replace('大结构',''))}</div><div class="radar-summary">${esc(e?.summary||compact(e?.body||'暂无分析',80))}</div></button>`}).join('');box.querySelectorAll('.radar-card').forEach(b=>b.onclick=()=>selectSymbol(b.dataset.sym))}
+function renderSidebar(){const ul=$('dateList');ul.innerHTML='';DATES.forEach(d=>{const day=DATA.days[d];const li=document.createElement('li');li.className=d===curDate?'active':'';li.innerHTML=`<span>${d.slice(5)}</span><span class="cnt">${day.type==='log'?day.entries.length:'doc'}</span>`;li.onclick=()=>{curDate=d;renderAll();loadChart()};ul.appendChild(li)});const div=$('symFilters');div.innerHTML='';const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));order.concat(rest).forEach(s=>{const m=symMeta(s),b=document.createElement('button');b.className='sym-chip '+(s===curSym?'active':'');b.innerHTML=`<strong>${esc(m.name)}</strong><small>${esc(m.code)} · ${esc(m.kind)}</small>`;b.onclick=()=>selectSymbol(s);div.appendChild(b)})}
+function renderLogs(){const day=DATA.days[curDate],content=$('content');if(!day){content.innerHTML='<div class="empty">无数据</div>';return}if(day.type==='summary'){content.innerHTML=`<div class="summary-doc">${day.html}</div>`;return}let entries=day.entries.slice().reverse();if(curSym)entries=entries.filter(e=>e.symbol===curSym);if(searchQ)entries=entries.filter(e=>((e.summary||'')+(e.body||'')).toLowerCase().includes(searchQ));const groups={};entries.forEach(e=>(groups[e.symbol]||(groups[e.symbol]=[])).push(e));let html=`<div class="day-header"><span class="day-dot"></span>${curDate} · ${curSym?symDisplay(curSym):'全部品种'}</div>`;Object.keys(groups).forEach(sym=>{html+=`<div class="sym-section"><div class="sym-title"><span class="badge ${SYM_BADGE[sym]||''}">${esc(symDisplay(sym))}</span><span class="count">${groups[sym].length} 条</span></div><div class="cards-grid">`;groups[sym].forEach((e,i)=>{const id='body_'+sym+'_'+i;html+=`<div class="card ${SYM_CLASS[sym]||''}"><div class="card-header"><span class="card-time">${esc(e.ts)}</span><span class="card-period">周期 ${esc(e.period)}</span></div><div class="card-summary">${highlight(e.summary||compact(e.body,110),searchQ)}</div><div class="card-body" id="${id}">${esc(e.body)}</div><span class="card-toggle" data-target="${id}">展开全文</span></div>`});html+='</div></div>'});content.innerHTML=html||'<div class="empty">没有匹配条目</div>';$('searchInfo').textContent=searchQ?'匹配 '+entries.length+' 条':'';content.querySelectorAll('.card-toggle').forEach(x=>x.onclick=function(){const b=$(this.dataset.target);b.classList.toggle('expanded');this.textContent=b.classList.contains('expanded')?'收起':'展开全文'})}
 function highlight(t,q){let e=esc(t);if(!q)return e;const r=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');return e.replace(r,'<mark class="search-hl">$1</mark>')}
-function renderAll(){renderSidebar();renderDecision();renderTimeline();renderLogs()}
+function renderAll(){renderSidebar();renderRadar();renderDecision();renderTimeline();renderLogs()}
 function initMeta(){$('genTime').textContent='数据 '+(DATA.generated_at||'--');$('statLine').textContent=`${DATA.meta.total_entries||0} 条 · ${(DATA.meta.dates||[]).length} 天`;const p=DATA.positions||{};if(p.entries&&p.entries.length){$('posWidget').innerHTML='<span class="pos-pill">持仓 '+p.entries.length+' 笔</span>'}else{$('posWidget').innerHTML='<span class="pos-pill">空仓</span>'}}
 $('searchInput').addEventListener('input',e=>{searchQ=e.target.value.trim().toLowerCase();renderLogs()});document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('view-'+b.dataset.tab).classList.add('active')});
 document.querySelectorAll('#chartTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#chartTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');chartInterval=b.dataset.int;loadChart()});
 async function loadTicker(){
-  try{const r=await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=ETHUSDT');if(!r.ok)throw 0;const j=await r.json(),p=parseFloat(j.lastPrice),c=parseFloat(j.priceChangePercent);lastPrice=p;$('livePrice').textContent=p.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});$('liveChange').textContent=(c>=0?'+':'')+c.toFixed(2)+'%';$('liveChange').className='live-change '+(c>=0?'up':'down');updateDistanceStrip();if(chartData.length)drawChart()}catch(e){$('livePrice').textContent='Binance --';$('liveChange').textContent=''}
+  const sym=curSym||'ETHUSDT',m=symMeta(sym);updateInstrumentUI();$('livePrice').textContent='--';$('liveChange').textContent='--';
+  try{const r=await fetch(`https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${encodeURIComponent(sym)}`);if(!r.ok)throw 0;const j=await r.json(),p=parseFloat(j.lastPrice),c=parseFloat(j.priceChangePercent);lastPrice=p;$('livePrice').textContent=formatPrice(p);$('liveChange').textContent=(c>=0?'+':'')+c.toFixed(2)+'%';$('liveChange').className='live-change '+(c>=0?'up':'down');renderDecision()}catch(e){$('livePrice').textContent='Binance --';$('liveChange').textContent='';updateDistanceStrip()}
 }
 async function loadChart(){
   const err=$('chartError');err.style.display='grid';err.textContent='正在连接 Binance...';
   try{
-    let url=`https://fapi.binance.com/fapi/v1/klines?symbol=ETHUSDT&interval=${chartInterval}&limit=100`;
+    const sym=curSym||'ETHUSDT';let url=`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(sym)}&interval=${chartInterval}&limit=100`;
     const mode=$('chartMode');
     if(!isLatestDate()&&curDate){
       const start=new Date(`${curDate}T00:00:00+08:00`).getTime(),end=start+24*60*60*1000-1;
-      url=`https://fapi.binance.com/fapi/v1/klines?symbol=ETHUSDT&interval=${chartInterval}&startTime=${start}&endTime=${end}&limit=300`;
+      url=`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(sym)}&interval=${chartInterval}&startTime=${start}&endTime=${end}&limit=300`;
       mode.textContent='历史回放';mode.className='chart-mode history';
     }else{mode.textContent='实时';mode.className='chart-mode live'}
     const r=await fetch(url);if(!r.ok)throw 0;const j=await r.json();chartData=j.map(x=>({t:x[0],o:+x[1],h:+x[2],l:+x[3],c:+x[4],v:+x[5]}));err.style.display='none';drawChart();
-  }catch(e){err.textContent='K 线连接失败；观点看板仍可正常使用'}
+  }catch(e){err.textContent=`${symMeta(curSym||'ETHUSDT').name} K 线连接失败；观点看板仍可正常使用`}
 }
 function drawChart(){
   const canvas=$('klineCanvas'),wrap=canvas.parentElement,dpr=window.devicePixelRatio||1;const W=wrap.clientWidth,H=wrap.clientHeight;canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);if(!chartData.length)return;

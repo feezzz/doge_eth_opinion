@@ -1,2 +1,10 @@
 data/
 .claude/
+# 密钥文件（不进入版本控制）
+autopilot/.env
+# 运行时日志
+autopilot/*.log
+autopilot/feishu_msg.txt
+# Python
+__pycache__/
+*.pyc

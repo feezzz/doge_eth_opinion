@@ -37,18 +37,39 @@ doge_watchdog.bat / doge_watchdog.py    → 5 分钟栅格守护进程
 另有分析日志看板：`dashboard/index.html`（替换为旧版）
 旧版路径：`dashboard/v1.html`（待迁移）
 
+## 本地运行
+
+```bash
+# 1. 配置密钥
+cp autopilot/.env.example autopilot/.env
+# 编辑 autopilot/.env，填入 DEEPSEEK_API_KEY 和 FEISHU_WEBHOOK_URL
+
+# 2. 启动 5 分钟轮询
+cd autopilot
+python doge_watchdog.py          # 前台运行
+# 或
+doge_watchdog.bat                # Windows 后台循环
+```
+
 ## 文档结构
 
 ```
+autopilot/
+  doge_autopilot.py   主流程：K线 → DeepSeek → 写文件 → 飞书 → Git
+  doge_klines.py      Binance 合约多周期 K 线取数
+  doge_watchdog.py    5 分钟栅格调度器
+  doge_watchdog.bat   Windows 外层循环包装
+  feishu_send.py      飞书群机器人 webhook 推送
+  .env.example        密钥配置模板（复制为 .env 填入实际值）
+  positions.json      持仓状态
 data/
-  kline-log.md      实时轮询日志（追加式，约 800KB）
+  kline-log.md        实时轮询日志（追加式，约 800KB）
 analysis/
   2026-08-03.md       每日分析（初期为总结文档，后期为滚动日志）
-  2026-08-04.md
   ...
   2026-08-12.md       最新（4 品种并行分析）
 dashboard/
-  index.html          实时决策看板 V2
+  index.html          实时决策看板 V5.1
   build_dashboard.py  数据构建脚本
   data.js             仪表盘数据
 README.md

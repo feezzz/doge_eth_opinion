@@ -42,7 +42,7 @@ POSITION_FILE  = str(HERE / "positions.json")
 
 DEEPSEEK_KEY   = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_URL   = "https://api.deepseek.com/v1/chat/completions"
-DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")  # 可选: deepseek-v4-pro
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 
 
 def log(msg):
@@ -151,7 +151,7 @@ K线数据:
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 4000
+        "max_tokens": 600
     }
 
     req = urllib.request.Request(
@@ -164,14 +164,9 @@ K线数据:
     )
 
     try:
-        resp = urllib.request.urlopen(req, timeout=180)
+        resp = urllib.request.urlopen(req, timeout=60)
         result = json.loads(resp.read())
-        msg = result["choices"][0]["message"]
-        content = (msg.get("content") or "").strip()
-        # v4 系列是推理模型：max_tokens 被思考过程吃光时 content 可能为空，回退到思考内容
-        if not content and msg.get("reasoning_content"):
-            content = msg["reasoning_content"].strip()
-        return content or None
+        return result["choices"][0]["message"]["content"].strip()
     except Exception as e:
         log(f"[autopilot] {symbol} DeepSeek API 失败: {e}")
         return None

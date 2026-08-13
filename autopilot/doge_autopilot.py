@@ -151,7 +151,7 @@ K线数据:
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 600
+        "max_tokens": 4000
     }
 
     req = urllib.request.Request(
@@ -164,9 +164,14 @@ K线数据:
     )
 
     try:
-        resp = urllib.request.urlopen(req, timeout=60)
+        resp = urllib.request.urlopen(req, timeout=180)
         result = json.loads(resp.read())
-        return result["choices"][0]["message"]["content"].strip()
+        msg = result["choices"][0]["message"]
+        content = (msg.get("content") or "").strip()
+        # v4 系列是推理模型：max_tokens 被思考过程吃光时 content 可能为空，回退到思考内容
+        if not content and msg.get("reasoning_content"):
+            content = msg["reasoning_content"].strip()
+        return content or None
     except Exception as e:
         log(f"[autopilot] {symbol} DeepSeek API 失败: {e}")
         return None

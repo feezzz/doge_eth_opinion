@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>狗哥行情决策看板 V6.1 · 信号生命周期版</title>
+<title>狗哥行情决策看板 V6.2 · 生命周期连续版</title>
 <style>
 :root{
   --bg:#090c10;--panel:#0f141a;--panel2:#121820;--line:#202833;--line2:#293442;
@@ -296,7 +296,7 @@ body{font-size:15px;line-height:1.58}
 @media(max-width:620px){.lifecycle-track{grid-template-columns:1fr 1fr}.signal-control-grid{grid-template-columns:1fr}.lifecycle-head{align-items:flex-start;flex-direction:column}}
 
 
-/* V6.1 — real-time data + lifecycle trigger */
+/* V6.2 — real-time data + lifecycle continuity across analysis rounds */
 .rt-state{display:inline-flex;align-items:center;gap:6px}.rt-state i{width:7px;height:7px;border-radius:50%;background:#5b6671}.rt-state.ok{color:#71d99d;border-color:#24543a}.rt-state.ok i{background:#2ecc71;box-shadow:0 0 0 4px rgba(46,204,113,.08)}.rt-state.warn{color:#e9c760;border-color:#5b4b17}.rt-state.warn i{background:#e9b949}.rt-state.bad{color:#f08a8a;border-color:#5f2b2b}.rt-state.bad i{background:#ff5d5d}
 .trigger-flash{position:fixed;z-index:120;left:50%;top:76px;transform:translate(-50%,-16px);min-width:min(720px,calc(100vw - 24px));max-width:900px;padding:13px 16px;border-radius:12px;border:1px solid #315440;background:rgba(10,25,18,.97);box-shadow:0 18px 60px rgba(0,0,0,.42);opacity:0;pointer-events:none;transition:.22s;color:#dff8e9}.trigger-flash.show{opacity:1;transform:translate(-50%,0)}.trigger-flash.short{border-color:#65343a;background:rgba(34,13,16,.97);color:#ffe5e7}.trigger-flash.confirm{border-color:#345779;background:rgba(11,24,37,.97);color:#e0f0ff}.trigger-flash b{font-size:15px;margin-right:8px}.trigger-flash span{font-size:12px;color:inherit;opacity:.86}
 .live-strip.ws-live .live-dot{animation:rtpulse 1.6s ease-in-out infinite}@keyframes rtpulse{0%,100%{box-shadow:0 0 0 3px rgba(46,204,113,.07)}50%{box-shadow:0 0 0 7px rgba(46,204,113,.02)}}
@@ -307,7 +307,7 @@ body{font-size:15px;line-height:1.58}
 <div class="app">
   <div class="trigger-flash" id="triggerFlash"><b id="triggerFlashTitle">信号触发</b><span id="triggerFlashText"></span></div>
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V6.1 实时触发版</small></div></div>
+    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V6.2 生命周期连续版</small></div></div>
     <div class="live-strip"><span class="live-dot"></span><span class="live-symbol" id="liveSymbol">ETH · ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
     <div class="top-meta"><span class="top-stat rt-state warn" id="realtimeState"><i></i><span>实时：连接中</span></span><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
   </header>
@@ -460,7 +460,7 @@ body{font-size:15px;line-height:1.58}
     </main>
   </div>
 </div>
-<script id="appDataScript" src="data.js?v=20260813105020"></script>
+<script id="appDataScript" src="data.js?v=20260813105349"></script>
 <script>
 (function(){
 'use strict';
@@ -584,11 +584,51 @@ function refreshDataJs(){
   sc.onerror=()=>{dataReloadBusy=false;sc.remove();setRealtimeState(marketWS&&marketWS.readyState===1?'ok':'warn',marketWS&&marketWS.readyState===1?'实时：WebSocket':'实时：数据检查失败')};document.head.appendChild(sc)
 }
 
-function signalKey(e,setup){const z=setup?.zone?`${setup.zone.lo}-${setup.zone.hi}`:'none';return `doge_v6:${curDate}:${e?.symbol||curSym}:${e?.ts||e?.period||'latest'}:${setup?.dir||'none'}:${z}`}
 function loadLifeRecord(key){try{return JSON.parse(localStorage.getItem(key)||'{}')}catch(e){return {}}}
 function saveLifeRecord(key,r){try{localStorage.setItem(key,JSON.stringify(r))}catch(e){}}
+function loadJSON(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}}
+function saveJSON(key,v){try{localStorage.setItem(key,JSON.stringify(v))}catch(e){}}
+function pctGap(a,b){a=Number(a);b=Number(b);if(!Number.isFinite(a)||!Number.isFinite(b)||a<=0||b<=0)return Infinity;return Math.abs(a-b)/Math.max(a,b)*100}
+function zoneCenter(z){return z?(Number(z.lo)+Number(z.hi))/2:null}
+function zoneOverlap(a,b){if(!a||!b)return false;return Math.max(a.lo,b.lo)<=Math.min(a.hi,b.hi)}
+function setupSnapshot(e,setup){return {dir:setup?.dir||null,zone:setup?.zone?{lo:Number(setup.zone.lo),hi:Number(setup.zone.hi)}:null,confirmPrice:Number(setup?.confirmPrice)||null,invalid:Number(setup?.invalid)||null,action:setup?.signal?.action||'',analysisTs:e?.ts||e?.period||'',symbol:e?.symbol||curSym}}
+function samePlan(prev,setup){
+  if(!prev||!setup||!prev.dir||!setup.dir||prev.dir!==setup.dir)return false;
+  const action=String(setup?.signal?.action||'').toUpperCase();if(action==='NO_TRADE')return false;
+  let score=0;
+  if(prev.zone&&setup.zone){const pc=zoneCenter(prev.zone),nc=zoneCenter(setup.zone),gap=pctGap(pc,nc);if(zoneOverlap(prev.zone,setup.zone)||gap<=.55)score+=4;else if(gap<=1.0)score+=2;else return false}
+  else if(!prev.zone&&!setup.zone)score+=1;
+  else score+=0;
+  if(prev.confirmPrice&&setup.confirmPrice){const g=pctGap(prev.confirmPrice,setup.confirmPrice);if(g<=.45)score+=2;else if(g<=.9)score+=1}
+  if(prev.invalid&&setup.invalid){const g=pctGap(prev.invalid,setup.invalid);if(g<=.6)score+=2;else if(g<=1.2)score+=1}
+  return score>=3;
+}
+function legacyLifeCandidate(e,setup){
+  try{
+    const sym=e?.symbol||curSym,prefix=`doge_v6:${curDate}:${sym}:`;let best=null,bestTime=0;
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);if(!k||!k.startsWith(prefix))continue;
+      const m=k.match(/:(long|short):([0-9.]+)-([0-9.]+)$/);if(!m||m[1]!==setup?.dir)continue;
+      const oldZone=normalizeZone(Number(m[2]),Number(m[3]));if(setup?.zone&&oldZone&&!zoneOverlap(oldZone,setup.zone)&&pctGap(zoneCenter(oldZone),zoneCenter(setup.zone))>1.0)continue;
+      const rec=loadLifeRecord(k),t=Math.max(Number(rec.touchedAt)||0,Number(rec.confirmedAt)||0,Number(rec.invalidAt)||0,Number(rec.targetAt)||0);if(t>bestTime){best={key:k,rec};bestTime=t}
+    }return best;
+  }catch(err){return null}
+}
+function resolveSignalChain(e,setup){
+  const sym=e?.symbol||curSym,slot=`doge_v62_active:${curDate}:${sym}`,snap=setupSnapshot(e,setup),now=Date.now();let meta=loadJSON(slot);
+  if(!meta){const legacy=legacyLifeCandidate(e,setup);if(legacy){meta={key:legacy.key,plan:snap,createdAt:Math.min(Number(legacy.rec.touchedAt)||now,now),lastSeenAt:now,lastAnalysisTs:snap.analysisTs,updates:0,migrated:true};saveJSON(slot,meta);return {key:meta.key,meta,continued:true,migrated:true}}}
+  if(meta?.key){
+    const prevRec=loadLifeRecord(meta.key),terminal=!!(prevRec.invalidAt||prevRec.targetAt);
+    if(!terminal&&samePlan(meta.plan,setup)){
+      const isNewRound=snap.analysisTs&&snap.analysisTs!==meta.lastAnalysisTs;
+      meta.plan=snap;meta.lastSeenAt=now;if(isNewRound){meta.updates=(Number(meta.updates)||0)+1;meta.lastAnalysisTs=snap.analysisTs;meta.lastContinuedAt=now}saveJSON(slot,meta);return {key:meta.key,meta,continued:isNewRound};
+    }
+  }
+  const zone=setup?.zone?`${setup.zone.lo}-${setup.zone.hi}`:'none',seed=e?.ts||e?.period||String(now),key=`doge_v62:${curDate}:${sym}:${seed}:${setup?.dir||'none'}:${zone}`;
+  meta={key,plan:snap,createdAt:now,lastSeenAt:now,lastAnalysisTs:snap.analysisTs,updates:0};saveJSON(slot,meta);return {key,meta,continued:false};
+}
 function deriveLifecycle(e,setup,price){
-  const s=setup?.signal,action=s?.action||'';const key=signalKey(e,setup),rec=loadLifeRecord(key),now=Date.now();let state='waiting',reason='等待关键位置或确认条件';
+  const s=setup?.signal,action=s?.action||'',chain=resolveSignalChain(e,setup),key=chain.key,rec=loadLifeRecord(key),now=Date.now();let state='waiting',reason='等待关键位置或确认条件';
   const dir=setup?.dir,zone=setup?.zone,stop=setup?.invalid,confirm=setup?.confirmPrice,target=(setup?.targets||[])[0]||setup?.target||null;
   const invalid=price&&dir&&stop&&((dir==='long'&&price<=stop)||(dir==='short'&&price>=stop));
   const confirmed=price&&dir&&confirm&&((dir==='long'&&price>=confirm)||(dir==='short'&&price<=confirm));
@@ -611,7 +651,7 @@ function deriveLifecycle(e,setup,price){
   else if(/^PREPARE_/.test(action)&&confirm){state='waiting';reason='方向明确，但确认价格尚未触发'}
   else if(zone){state='waiting';reason='试仓位置明确，等待价格到位'}
   else if(!dir){state='waiting';reason='当前没有明确可执行方向'}
-  saveLifeRecord(key,rec);return {state,reason,rec,key};
+  saveLifeRecord(key,rec);return {state,reason,rec,key,chain};
 }
 function evidenceClass(v){v=String(v||'UNKNOWN').toUpperCase();if(['GOOD','YES'].includes(v))return 'good';if(['OK','PARTIAL'].includes(v))return 'ok';if(['BAD','NO'].includes(v))return 'bad';return ''}
 function evidenceText(v){const m={GOOD:'优',YES:'已形成',OK:'一般',PARTIAL:'部分',BAD:'差',NO:'未形成',UNKNOWN:'未知'};return m[String(v||'UNKNOWN').toUpperCase()]||'未知'}
@@ -627,7 +667,7 @@ function renderLifecycle(e,text,d){
   const cp=setup.confirmPrice;$('confirmControl').textContent=cp?`${setup.dir==='short'?'跌破':'站上'} ${formatPrice(cp)}`:(setup.signal?.trigger||setup.condition||'等待确认条件');$('confirmControlSub').textContent=life.state==='confirmed'?'确认条件已经触发':'与试仓分开判断，未确认前不当成正式入场';
   const chase=setup.allowChase===true;$('chaseControl').textContent=chase?'允许':'禁止';$('chaseControl').className=chase?'yes':'no';$('chaseControlSub').textContent=chase?'仅按最新结构化信号':'默认不追；错过试仓区就放弃追价';
   const ev=setup.signal?.evidence||{};const items=[['位置',ev.location],['共振',ev.resonance],['换手',ev.turnover],['空间',ev.room]];$('evidenceRow').innerHTML=items.map(([k,v])=>`<span class="evidence-chip ${evidenceClass(v)}"><i></i>${k} · ${evidenceText(v)}</span>`).join('');
-  const stats=[];if(life.rec.touchedAt)stats.push(`试仓触达 <strong>${new Date(life.rec.touchedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(life.rec.confirmedAt)stats.push(`确认触发 <strong>${new Date(life.rec.confirmedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(Number.isFinite(life.rec.mfe))stats.push(`触达后最大有利 <strong>${life.rec.mfe.toFixed(2)}%</strong>`);if(Number.isFinite(life.rec.mae))stats.push(`最大不利 <strong>${life.rec.mae.toFixed(2)}%</strong>`);$('lifeStats').innerHTML=stats.map(x=>`<span>${x}</span>`).join('');
+  const stats=[];if(life.chain?.meta?.updates)stats.push(`计划连续更新 <strong>${life.chain.meta.updates} 轮</strong>`);if(life.chain?.migrated)stats.push(`<strong>已继承 V6.1 状态</strong>`);if(life.rec.touchedAt)stats.push(`试仓触达 <strong>${new Date(life.rec.touchedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(life.rec.confirmedAt)stats.push(`确认触发 <strong>${new Date(life.rec.confirmedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(Number.isFinite(life.rec.mfe))stats.push(`触达后最大有利 <strong>${life.rec.mfe.toFixed(2)}%</strong>`);if(Number.isFinite(life.rec.mae))stats.push(`最大不利 <strong>${life.rec.mae.toFixed(2)}%</strong>`);$('lifeStats').innerHTML=stats.map(x=>`<span>${x}</span>`).join('');
   lifecycleAlert(e,setup,life);
   return life;
 }
@@ -763,7 +803,7 @@ function directionalPlan(text,dir){
   return dir==='long'?'关键压力收盘站稳后，再等回踩/换手确认，不追第一根。':'关键支撑收盘失守后，再等反抽不过/换手确认，不在支撑上追空。';
 }
 function formatPrice(v){if(v===null||v===undefined||!Number.isFinite(+v))return '--';return (+v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
-function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V6.1`}
+function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V6.2`}
 function nearestLevels(price,levels){
   if(!price||!levels.length)return {res:null,sup:null};
   const vals=levels.map(x=>x.v).filter(Number.isFinite);

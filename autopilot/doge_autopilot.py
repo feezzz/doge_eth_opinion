@@ -42,7 +42,7 @@ POSITION_FILE  = str(HERE / "positions.json")
 
 DEEPSEEK_KEY   = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_URL   = "https://api.deepseek.com/v1/chat/completions"
-DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")  # 可选: deepseek-v4-pro
 
 
 def log(msg):

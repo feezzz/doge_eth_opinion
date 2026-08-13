@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>狗哥行情决策看板 V6 · 信号生命周期版</title>
+<title>狗哥行情决策看板 V6.1 · 信号生命周期版</title>
 <style>
 :root{
   --bg:#090c10;--panel:#0f141a;--panel2:#121820;--line:#202833;--line2:#293442;
@@ -222,7 +222,7 @@ body{font-size:15px;line-height:1.58}
 
 
 
-/* ===== V6 信号生命周期版：降低噪音，把价格层级放到第一视觉中心 ===== */
+/* ===== V6.1 实时触发版：降低噪音，把价格层级放到第一视觉中心 ===== */
 .quick-command{padding:18px 20px 20px;background:linear-gradient(145deg,#14170f 0%,#10161c 55%,#0d1319 100%);border-color:#34301d}
 .quick-command:after{opacity:.55}
 .quick-head{padding-bottom:4px}
@@ -267,7 +267,7 @@ body{font-size:15px;line-height:1.58}
 @media(max-width:560px){.compact-radar{grid-template-columns:1fr}.level{grid-template-columns:70px 92px minmax(0,1fr)}.level.focus-level .price{font-size:20px}}
 
 
-/* ===== V6 信号生命周期版：把“能不能试”放在等待之前 ===== */
+/* ===== V6.1 实时触发版：把“能不能试”放在等待之前 ===== */
 .execution-opportunity{margin:0 0 16px;border:1px solid #3d4650;border-radius:15px;background:linear-gradient(135deg,#10161c,#0c1218);box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:minmax(280px,.78fr) minmax(0,1.55fr)}
 .exec-status{padding:17px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;position:relative}
 .exec-status:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#7b8794}
@@ -295,14 +295,21 @@ body{font-size:15px;line-height:1.58}
 @media(max-width:1100px){.lifecycle-track{grid-template-columns:repeat(3,1fr)}.signal-control-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.lifecycle-track{grid-template-columns:1fr 1fr}.signal-control-grid{grid-template-columns:1fr}.lifecycle-head{align-items:flex-start;flex-direction:column}}
 
+
+/* V6.1 — real-time data + lifecycle trigger */
+.rt-state{display:inline-flex;align-items:center;gap:6px}.rt-state i{width:7px;height:7px;border-radius:50%;background:#5b6671}.rt-state.ok{color:#71d99d;border-color:#24543a}.rt-state.ok i{background:#2ecc71;box-shadow:0 0 0 4px rgba(46,204,113,.08)}.rt-state.warn{color:#e9c760;border-color:#5b4b17}.rt-state.warn i{background:#e9b949}.rt-state.bad{color:#f08a8a;border-color:#5f2b2b}.rt-state.bad i{background:#ff5d5d}
+.trigger-flash{position:fixed;z-index:120;left:50%;top:76px;transform:translate(-50%,-16px);min-width:min(720px,calc(100vw - 24px));max-width:900px;padding:13px 16px;border-radius:12px;border:1px solid #315440;background:rgba(10,25,18,.97);box-shadow:0 18px 60px rgba(0,0,0,.42);opacity:0;pointer-events:none;transition:.22s;color:#dff8e9}.trigger-flash.show{opacity:1;transform:translate(-50%,0)}.trigger-flash.short{border-color:#65343a;background:rgba(34,13,16,.97);color:#ffe5e7}.trigger-flash.confirm{border-color:#345779;background:rgba(11,24,37,.97);color:#e0f0ff}.trigger-flash b{font-size:15px;margin-right:8px}.trigger-flash span{font-size:12px;color:inherit;opacity:.86}
+.live-strip.ws-live .live-dot{animation:rtpulse 1.6s ease-in-out infinite}@keyframes rtpulse{0%,100%{box-shadow:0 0 0 3px rgba(46,204,113,.07)}50%{box-shadow:0 0 0 7px rgba(46,204,113,.02)}}
+
 </style>
 </head>
 <body>
 <div class="app">
+  <div class="trigger-flash" id="triggerFlash"><b id="triggerFlashTitle">信号触发</b><span id="triggerFlashText"></span></div>
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V6 信号生命周期版</small></div></div>
+    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V6.1 实时触发版</small></div></div>
     <div class="live-strip"><span class="live-dot"></span><span class="live-symbol" id="liveSymbol">ETH · ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
-    <div class="top-meta"><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
+    <div class="top-meta"><span class="top-stat rt-state warn" id="realtimeState"><i></i><span>实时：连接中</span></span><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
   </header>
   <div class="shell">
     <aside class="sidebar">
@@ -453,11 +460,11 @@ body{font-size:15px;line-height:1.58}
     </main>
   </div>
 </div>
-<script src="data.js?v=20260813103020"></script>
+<script id="appDataScript" src="data.js?v=20260813103442"></script>
 <script>
 (function(){
 'use strict';
-const DATA=window.APP_DATA||{meta:{dates:[],symbols:[],total_entries:0},days:{},positions:{}};
+let DATA=window.APP_DATA||{meta:{dates:[],symbols:[],total_entries:0},days:{},positions:{}};
 const SYM_CLASS={ETHUSDT:'eth',MUUSDT:'mu',SNDKUSDT:'sndk',SKHYUSDT:'skhy'};
 const SYM_BADGE={ETHUSDT:'badge-eth',MUUSDT:'badge-mu',SNDKUSDT:'badge-sndk',SKHYUSDT:'badge-skhy'};
 const SYMBOL_META={
@@ -468,9 +475,10 @@ const SYMBOL_META={
 };
 const symMeta=s=>SYMBOL_META[s]||{name:String(s||'').replace('USDT',''),full:String(s||''),code:String(s||'').replace('USDT',''),kind:'永续'};
 function symDisplay(s,withCode=true){const m=symMeta(s);return withCode?`${m.name} · ${m.code}`:m.name}
-const DATES=(DATA.meta.dates||[]).slice().reverse();
+let DATES=(DATA.meta.dates||[]).slice().reverse();
 let curDate=DATES[0]||''; let curSym=(DATA.meta.symbols||[]).includes('ETHUSDT')?'ETHUSDT':null; let searchQ=''; let chartInterval='15m'; let chartData=[]; let lastPrice=null; let currentLevels=[]; let currentEntry=null;
 const TICKERS={}; let planLevels={longTrigger:null,shortTrigger:null,longInvalid:null,shortInvalid:null};
+let marketWS=null,wsReconnectTimer=null,dataReloadBusy=false,lastDataStamp=DATA.generated_at||'',lastLifeUIKey='',triggerFlashTimer=null,lastWSRender=0;
 const $=id=>document.getElementById(id);
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function compact(s,n=160){s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n)+'…':s}
@@ -550,6 +558,32 @@ function setupFromEntry(e,text,price){
   const target=s.targets[0]||null;
   return {dir,zone:s.zone,status,distancePct,condition:s.trigger||'按结构化信号条件执行',source:'结构化信号',context:'',score:4,invalid:s.invalid,target,targets:s.targets,structured:true,signal:s,confirmPrice:s.confirmPrice,allowChase:s.allowChase,invalidation:s.invalidation};
 }
+
+function setRealtimeState(kind,text){const el=$('realtimeState');if(!el)return;el.className='top-stat rt-state '+kind;const sp=el.querySelector('span');if(sp)sp.textContent=text}
+function showTriggerFlash(kind,title,text){const box=$('triggerFlash');if(!box)return;box.className='trigger-flash '+(kind||'');$('triggerFlashTitle').textContent=title;$('triggerFlashText').textContent=text||'';requestAnimationFrame(()=>box.classList.add('show'));clearTimeout(triggerFlashTimer);triggerFlashTimer=setTimeout(()=>box.classList.remove('show'),9000)}
+function lifecycleAlert(e,setup,life){if(!e||!isLatestDate())return;const uiKey=`${life.key}:${life.state}`;if(uiKey===lastLifeUIKey)return;const previous=lastLifeUIKey;lastLifeUIKey=uiKey;if(!previous&& !['trial','confirmed','invalid','target'].includes(life.state))return;
+  if(life.state==='trial')showTriggerFlash(setup.dir==='short'?'short':'',setup.dir==='short'?'空头试仓条件已到':'多头试仓条件已到',`${symMeta(e.symbol||curSym).name} · ${setup.zone?zoneText(setup.zone):'按最新条件'} · ${setup.condition||''}`);
+  else if(life.state==='confirmed')showTriggerFlash('confirm','确认入场条件已触发',`${symMeta(e.symbol||curSym).name} · ${setup.confirmPrice?formatPrice(setup.confirmPrice):setup.condition||''}`);
+  else if(life.state==='invalid')showTriggerFlash('short','原计划已经失效',`${symMeta(e.symbol||curSym).name} · ${life.reason}`);
+  else if(life.state==='target')showTriggerFlash('confirm','第一目标已触及',`${symMeta(e.symbol||curSym).name} · 进入持仓管理 / 分仓止盈`);
+}
+function reconnectMarketWS(delay=2500){clearTimeout(wsReconnectTimer);wsReconnectTimer=setTimeout(connectMarketWS,delay)}
+function closeMarketWS(){clearTimeout(wsReconnectTimer);if(marketWS){try{marketWS.onclose=null;marketWS.close()}catch(e){}marketWS=null}}
+function connectMarketWS(){
+  closeMarketWS();if(!isLatestDate()){setRealtimeState('warn','实时：历史回放');return}
+  const sym=(curSym||'ETHUSDT').toLowerCase();setRealtimeState('warn','实时：连接中');
+  try{marketWS=new WebSocket(`wss://fstream.binance.com/market/ws/${sym}@ticker`)}catch(e){setRealtimeState('bad','实时：WS失败');reconnectMarketWS(5000);return}
+  marketWS.onopen=()=>{setRealtimeState('ok','实时：WebSocket');document.querySelector('.live-strip')?.classList.add('ws-live')};
+  marketWS.onmessage=ev=>{try{const j=JSON.parse(ev.data),p=Number(j.c),c=Number(j.P);if(!Number.isFinite(p))return;lastPrice=p;TICKERS[(curSym||'ETHUSDT')]={last:p,change:Number.isFinite(c)?c:(TICKERS[curSym||'ETHUSDT']?.change||0)};$('livePrice').textContent=formatPrice(p);if(Number.isFinite(c)){$('liveChange').textContent=(c>=0?'+':'')+c.toFixed(2)+'%';$('liveChange').className='live-change '+(c>=0?'up':'down')}const now=Date.now();if(now-lastWSRender>=1000){lastWSRender=now;renderDecision();renderOpportunityRadar();if(chartData.length&&isLatestDate()){chartData[chartData.length-1].c=p;drawChart()}}}catch(e){}};
+  marketWS.onerror=()=>setRealtimeState('bad','实时：连接异常');
+  marketWS.onclose=()=>{document.querySelector('.live-strip')?.classList.remove('ws-live');if(isLatestDate()){setRealtimeState('warn','实时：重连中');reconnectMarketWS()}};
+}
+function refreshDataJs(){
+  if(dataReloadBusy)return;dataReloadBusy=true;const before=DATA.generated_at||lastDataStamp||'';const wasLatest=curDate===DATES[0];const sc=document.createElement('script');sc.async=true;sc.src=`data.js?rt=${Date.now()}`;
+  sc.onload=()=>{try{const fresh=window.APP_DATA;if(fresh&&fresh.meta&&fresh.days){const stamp=fresh.generated_at||'';if(stamp!==before){DATA=fresh;DATES=(DATA.meta.dates||[]).slice().reverse();lastDataStamp=stamp;if(wasLatest||!DATA.days[curDate])curDate=DATES[0]||curDate;if(curSym&&!((DATA.meta.symbols||[]).includes(curSym)))curSym=(DATA.meta.symbols||[])[0]||curSym;initMeta();renderAll();loadAllTickers();loadChart();showTriggerFlash('confirm','新一轮分析已载入',`${DATA.generated_at||'刚刚'} · 页面无需刷新`)}}}finally{dataReloadBusy=false;sc.remove()}};
+  sc.onerror=()=>{dataReloadBusy=false;sc.remove();setRealtimeState(marketWS&&marketWS.readyState===1?'ok':'warn',marketWS&&marketWS.readyState===1?'实时：WebSocket':'实时：数据检查失败')};document.head.appendChild(sc)
+}
+
 function signalKey(e,setup){const z=setup?.zone?`${setup.zone.lo}-${setup.zone.hi}`:'none';return `doge_v6:${curDate}:${e?.symbol||curSym}:${e?.ts||e?.period||'latest'}:${setup?.dir||'none'}:${z}`}
 function loadLifeRecord(key){try{return JSON.parse(localStorage.getItem(key)||'{}')}catch(e){return {}}}
 function saveLifeRecord(key,r){try{localStorage.setItem(key,JSON.stringify(r))}catch(e){}}
@@ -582,7 +616,7 @@ function deriveLifecycle(e,setup,price){
 function evidenceClass(v){v=String(v||'UNKNOWN').toUpperCase();if(['GOOD','YES'].includes(v))return 'good';if(['OK','PARTIAL'].includes(v))return 'ok';if(['BAD','NO'].includes(v))return 'bad';return ''}
 function evidenceText(v){const m={GOOD:'优',YES:'已形成',OK:'一般',PARTIAL:'部分',BAD:'差',NO:'未形成',UNKNOWN:'未知'};return m[String(v||'UNKNOWN').toUpperCase()]||'未知'}
 function renderLifecycle(e,text,d){
-  const setup=d.setup||setupFromEntry(e,text,lastPrice),life=deriveLifecycle(e,setup,lastPrice),structured=!!setup.structured;
+  const lifePrice=isLatestDate()?lastPrice:null,setup=d.setup||setupFromEntry(e,text,lifePrice),life=deriveLifecycle(e,setup,lifePrice),structured=!!setup.structured;
   const src=$('signalSource');src.textContent=structured?'结构化信号':'兼容识别';src.className='signal-source'+(structured?'':' legacy');
   const order=['waiting','near','trial','confirmed','triggered','finished'];let active='waiting',terminal=false;
   if(life.state==='near')active='near';else if(life.state==='trial')active='trial';else if(life.state==='confirmed')active='confirmed';else if(life.state==='triggered')active='triggered';else if(['invalid','expired','target','no-trade'].includes(life.state)){active='finished';terminal=true}
@@ -594,6 +628,7 @@ function renderLifecycle(e,text,d){
   const chase=setup.allowChase===true;$('chaseControl').textContent=chase?'允许':'禁止';$('chaseControl').className=chase?'yes':'no';$('chaseControlSub').textContent=chase?'仅按最新结构化信号':'默认不追；错过试仓区就放弃追价';
   const ev=setup.signal?.evidence||{};const items=[['位置',ev.location],['共振',ev.resonance],['换手',ev.turnover],['空间',ev.room]];$('evidenceRow').innerHTML=items.map(([k,v])=>`<span class="evidence-chip ${evidenceClass(v)}"><i></i>${k} · ${evidenceText(v)}</span>`).join('');
   const stats=[];if(life.rec.touchedAt)stats.push(`试仓触达 <strong>${new Date(life.rec.touchedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(life.rec.confirmedAt)stats.push(`确认触发 <strong>${new Date(life.rec.confirmedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(Number.isFinite(life.rec.mfe))stats.push(`触达后最大有利 <strong>${life.rec.mfe.toFixed(2)}%</strong>`);if(Number.isFinite(life.rec.mae))stats.push(`最大不利 <strong>${life.rec.mae.toFixed(2)}%</strong>`);$('lifeStats').innerHTML=stats.map(x=>`<span>${x}</span>`).join('');
+  lifecycleAlert(e,setup,life);
   return life;
 }
 
@@ -728,7 +763,7 @@ function directionalPlan(text,dir){
   return dir==='long'?'关键压力收盘站稳后，再等回踩/换手确认，不追第一根。':'关键支撑收盘失守后，再等反抽不过/换手确认，不在支撑上追空。';
 }
 function formatPrice(v){if(v===null||v===undefined||!Number.isFinite(+v))return '--';return (+v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
-function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V6`}
+function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V6.1`}
 function nearestLevels(price,levels){
   if(!price||!levels.length)return {res:null,sup:null};
   const vals=levels.map(x=>x.v).filter(Number.isFinite);
@@ -861,9 +896,9 @@ function renderDecision(){
 }
 function waitClass(t){return /不动手|等方向|宁可空仓|别手痒|不上不下/.test(t)?'bad':(/等|确认/.test(t)?'warn':'ok')}
 function renderTimeline(){const list=allEntries(curDate,curSym||'ETHUSDT').slice(-8).reverse();$('timeline').innerHTML=list.length?list.map(e=>{const d=deriveDecision(e);const tc=d.cls.includes('long')?'long':d.cls.includes('short')?'short':d.cls.includes('wait')?'wait':'';return `<div class="tl ${tc}"><div class="time">${esc(e.ts||e.period)}</div><div class="tl-state ${d.cls.replace('state-','')==='long'?'up':d.cls.replace('state-','')==='short'?'down':''}">${esc(d.state)} · ${esc(d.bias)}${e.signal?' · 结构化':''}</div><p title="${esc(e.summary||e.body||'')}">${esc(e.summary||compact(e.body,200))}</p></div>`}).join(''):'<div class="empty">暂无结构变化</div>'}
-function selectSymbol(s){if(!s||s===curSym)return;curSym=s;lastPrice=null;chartData=[];currentLevels=[];renderAll();loadTicker();loadChart()}
+function selectSymbol(s){if(!s||s===curSym)return;curSym=s;lastPrice=null;chartData=[];currentLevels=[];lastLifeUIKey='';renderAll();loadTicker();loadChart();connectMarketWS()}
 function renderRadar(){renderOpportunityRadar()}
-function renderSidebar(){const ul=$('dateList');ul.innerHTML='';DATES.forEach(d=>{const day=DATA.days[d];const li=document.createElement('li');li.className=d===curDate?'active':'';li.innerHTML=`<span>${d.slice(5)}</span><span class="cnt">${day.type==='log'?day.entries.length:'doc'}</span>`;li.onclick=()=>{curDate=d;renderAll();loadChart()};ul.appendChild(li)});const div=$('symFilters');div.innerHTML='';const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));order.concat(rest).forEach(s=>{const m=symMeta(s),b=document.createElement('button');b.className='sym-chip '+(s===curSym?'active':'');b.innerHTML=`<strong>${esc(m.name)}</strong><small>${esc(m.code)} · ${esc(m.kind)}</small>`;b.onclick=()=>selectSymbol(s);div.appendChild(b)})}
+function renderSidebar(){const ul=$('dateList');ul.innerHTML='';DATES.forEach(d=>{const day=DATA.days[d];const li=document.createElement('li');li.className=d===curDate?'active':'';li.innerHTML=`<span>${d.slice(5)}</span><span class="cnt">${day.type==='log'?day.entries.length:'doc'}</span>`;li.onclick=()=>{curDate=d;lastLifeUIKey='';renderAll();loadChart();connectMarketWS()};ul.appendChild(li)});const div=$('symFilters');div.innerHTML='';const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));order.concat(rest).forEach(s=>{const m=symMeta(s),b=document.createElement('button');b.className='sym-chip '+(s===curSym?'active':'');b.innerHTML=`<strong>${esc(m.name)}</strong><small>${esc(m.code)} · ${esc(m.kind)}</small>`;b.onclick=()=>selectSymbol(s);div.appendChild(b)})}
 function renderLogs(){const day=DATA.days[curDate],content=$('content');if(!day){content.innerHTML='<div class="empty">无数据</div>';return}if(day.type==='summary'){content.innerHTML=`<div class="summary-doc">${day.html}</div>`;return}let entries=day.entries.slice().reverse();if(curSym)entries=entries.filter(e=>e.symbol===curSym);if(searchQ)entries=entries.filter(e=>((e.summary||'')+(e.body||'')).toLowerCase().includes(searchQ));const groups={};entries.forEach(e=>(groups[e.symbol]||(groups[e.symbol]=[])).push(e));let html=`<div class="day-header"><span class="day-dot"></span>${curDate} · ${curSym?symDisplay(curSym):'全部品种'}</div>`;Object.keys(groups).forEach(sym=>{html+=`<div class="sym-section"><div class="sym-title"><span class="badge ${SYM_BADGE[sym]||''}">${esc(symDisplay(sym))}</span><span class="count">${groups[sym].length} 条</span></div><div class="cards-grid">`;groups[sym].forEach((e,i)=>{const id='body_'+sym+'_'+i;html+=`<div class="card ${SYM_CLASS[sym]||''}"><div class="card-header"><span class="card-time">${esc(e.ts)}</span><span class="card-period">周期 ${esc(e.period)}</span></div><div class="card-summary">${highlight(e.summary||compact(e.body,220),searchQ)}</div><div class="card-body" id="${id}">${esc(e.body)}</div><span class="card-toggle" data-target="${id}">展开全文</span></div>`});html+='</div></div>'});content.innerHTML=html||'<div class="empty">没有匹配条目</div>';$('searchInfo').textContent=searchQ?'匹配 '+entries.length+' 条':'';content.querySelectorAll('.card-toggle').forEach(x=>x.onclick=function(){const b=$(this.dataset.target);b.classList.toggle('expanded');this.textContent=b.classList.contains('expanded')?'收起':'展开全文'})}
 function highlight(t,q){let e=esc(t);if(!q)return e;const r=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');return e.replace(r,'<mark class="search-hl">$1</mark>')}
 function renderAll(){renderSidebar();renderRadar();renderDecision();renderTimeline();renderLogs()}
@@ -907,7 +942,7 @@ function drawChart(){
   ctx.fillStyle='#4c5966';ctx.font='8px Consolas';const firstT=new Date(chartData[0].t),lastT=new Date(chartData[chartData.length-1].t);const fmt=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;ctx.fillText(fmt(firstT),pad.l,H-3);ctx.fillText(fmt(lastT),Math.max(pad.l,W-pad.r-28),H-3);
 }
 window.addEventListener('resize',()=>{if(chartData.length)drawChart()});
-initMeta();renderAll();loadAllTickers();loadTicker();loadChart();setInterval(loadTicker,15000);setInterval(loadAllTickers,60000);setInterval(loadChart,60000);
+initMeta();renderAll();loadAllTickers();loadTicker();loadChart();connectMarketWS();refreshDataJs();setInterval(refreshDataJs,15000);setInterval(loadTicker,60000);setInterval(loadAllTickers,60000);setInterval(loadChart,60000);
 })();
 </script>
 </body>

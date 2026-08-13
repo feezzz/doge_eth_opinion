@@ -56,7 +56,7 @@ def log(msg):
         pass
 
 # ── 狗哥交易体系系统提示 ──────────────────────────
-SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海力士(SKHY)、镁光(MU) 的多周期行情分析。V7 的核心不是追逐 5 分钟涨跌，而是先确定大周期主线，再用小周期找执行位置。
+SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海力士(SKHY)、镁光(MU) 的多周期行情分析。V7.1 的核心不是追逐 5 分钟涨跌，而是先确定大周期主线，再用小周期找执行位置；执行计划必须跨轮次连续，不能因为新一轮分析自动清空。
 
 ## 周期权重（必须严格遵守）
 1. 1D + 4H：决定“大周期主线”和市场阶段，权重最高。
@@ -70,6 +70,13 @@ SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海�
 - macro_bias 只有在 1D/4H 或至少 4H+1H 出现明确结构性失效时才允许 FLIP；必须在正文说明失效依据。
 - 默认不做逆大周期试仓。只有 macro_bias=NEUTRAL，或 4H 明确箱体且 2H/1H 同步反转时，才允许 countertrend。
 - 重点回答：未来数小时到 1-2 天更应该偏向哪一边、哪里是主线失效位、回调到哪里值得等。
+
+## 执行计划连续性（必须严格遵守）
+- “上一轮大周期状态”里也会包含上一轮执行计划。只要旧计划没有明确失效，就默认继续沿用，不能因为本轮暂时没到位置就把 trial_zone / stop / targets 清空。
+- WAIT 只表示“当前不执行”，不等于取消旧计划。若旧计划仍有效，action 应继续使用 PREPARE_LONG / PREPARE_SHORT，并保留原 trial_zone、trigger、confirm_price、stop、targets。
+- 只有以下情况允许取消旧计划：主线 FLIP；价格/收盘已满足旧计划明确失效条件；或你有新的结构性依据认为旧计划不再成立。取消时必须输出 plan_change="CANCEL" 并在 plan_reason 写明原因。
+- 同一方向、同一逻辑，只是试仓区/确认价小幅调整，用 plan_change="ADJUST"；完全新的一套交易逻辑用 NEW；其余默认 KEEP。
+- 如果上一轮已有试仓计划，而本轮只是短线震荡、没有新的明确失效依据，绝不能输出 WAIT + trial_zone=null 来“遗忘”计划。
 
 ## 狗哥体系
 - 收盘确认优先，盘中刺穿不算突破。
@@ -88,7 +95,7 @@ SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海�
 不要机械罗列全部K线，不要编造输入里没有的数值。
 
 正文后另起一行输出机器信号：
-[[SIGNAL]]{"action":"WAIT","bias":"NEUTRAL","macro_bias":"NEUTRAL","macro_regime":"RANGE","macro_change":"KEEP","macro_strength":"WEAK","macro_thesis":"","macro_invalidation":"","tactical_bias":"NEUTRAL","entry_mode":"NONE","countertrend":false,"trial_zone":null,"trigger":"","confirm_price":null,"stop":null,"targets":[],"invalidation":"","allow_chase":false,"evidence":{"location":"UNKNOWN","resonance":"UNKNOWN","turnover":"UNKNOWN","room":"UNKNOWN"}}
+[[SIGNAL]]{"action":"WAIT","bias":"NEUTRAL","macro_bias":"NEUTRAL","macro_regime":"RANGE","macro_change":"KEEP","macro_strength":"WEAK","macro_thesis":"","macro_invalidation":"","tactical_bias":"NEUTRAL","entry_mode":"NONE","countertrend":false,"plan_change":"KEEP","plan_reason":"","trial_zone":null,"trigger":"","confirm_price":null,"stop":null,"targets":[],"invalidation":"","allow_chase":false,"evidence":{"location":"UNKNOWN","resonance":"UNKNOWN","turnover":"UNKNOWN","room":"UNKNOWN"}}
 
 字段约束：
 - action: TRY_LONG / TRY_SHORT / PREPARE_LONG / PREPARE_SHORT / WAIT / NO_TRADE
@@ -102,7 +109,9 @@ SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海�
 - tactical_bias: 1H/30m 当前执行层方向 LONG / SHORT / NEUTRAL
 - entry_mode: PULLBACK / BREAKOUT / REBOUND / RANGE_EDGE / NONE
 - countertrend: 是否逆大周期；默认 false
-- trial_zone 仅在明确给出可尝试区域时填写 [低,高]
+- plan_change: KEEP / ADJUST / CANCEL / NEW；默认 KEEP。WAIT 不能隐含 CANCEL
+- plan_reason: 仅在 ADJUST / CANCEL / NEW 时简短说明原因
+- trial_zone 仅在明确给出可尝试区域时填写 [低,高]；若上一轮已有且仍有效，必须继续保留
 - TRY 只代表当前价格已到试仓区；未到用 PREPARE
 - stop/targets/confirm_price 只能使用输入中明确可依据的价格，不能自己造
 - allow_chase 默认 false
@@ -171,6 +180,56 @@ def save_market_state(state):
         log(f"[autopilot] market_state 保存失败: {e}")
 
 
+
+def recover_recent_execution_plan(symbol, previous_state=None, max_rounds=12):
+    """从当天 analysis 日志恢复最近仍有效的执行计划，用于从旧 market_state 平滑迁移到 V7.1。"""
+    prev = dict(previous_state or {})
+    if prev.get("trial_zone") and prev.get("bias") in {"LONG", "SHORT"}:
+        return prev
+    today = datetime.now().strftime("%Y-%m-%d")
+    path = os.path.join(ANALYSIS_DIR, f"{today}.md")
+    try:
+        text = open(path, "r", encoding="utf-8").read()
+    except Exception:
+        return prev
+
+    pattern = re.compile(
+        rf"##\s+\d{{2}}:\d{{2}}\s+—\s+{re.escape(symbol)}\b.*?<!--SIGNAL\s+(\{{.*?\}})-->",
+        re.S,
+    )
+    matches = pattern.findall(text)
+    if not matches:
+        return prev
+
+    macro_now = str(prev.get("macro_bias") or "NEUTRAL")
+    checked = 0
+    for payload in reversed(matches):
+        if checked >= max_rounds:
+            break
+        checked += 1
+        try:
+            sig = normalize_signal(json.loads(payload))
+        except Exception:
+            continue
+        if sig.get("plan_change") == "CANCEL" or sig.get("macro_change") == "FLIP" or sig.get("action") == "NO_TRADE":
+            break
+        if not sig.get("trial_zone") or sig.get("bias") not in {"LONG", "SHORT"}:
+            continue
+        macro_old = str(sig.get("macro_bias") or "NEUTRAL")
+        if macro_now in {"LONG", "SHORT"} and macro_old in {"LONG", "SHORT"} and macro_now != macro_old:
+            break
+        # 保留 market_state 里更新的大周期字段，同时补回旧执行计划字段。
+        recovered = dict(sig)
+        for k in ("macro_bias", "macro_regime", "macro_change", "macro_strength", "macro_thesis", "macro_invalidation", "updated_at"):
+            if prev.get(k) not in (None, ""):
+                recovered[k] = prev[k]
+        recovered["plan_change"] = "KEEP"
+        recovered["plan_reason"] = "从当天最近有效分析恢复上一轮执行计划"
+        log(f"[autopilot] [{symbol}] 恢复上一轮执行计划: {recovered.get('bias')} {recovered.get('trial_zone')}")
+        return recovered
+    return prev
+
+
 def call_deepseek(kline_data, symbol, scope, period, previous_state=None):
     """调用 DeepSeek API 生成分析。"""
     if not DEEPSEEK_KEY:
@@ -197,7 +256,7 @@ K线数据（按 1D→4H→2H→1H→30m→15m→5m 排列）:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt}
         ],
-        "temperature": 0.7,
+        "temperature": 0.45,
         "max_tokens": 1000
     }
 
@@ -248,6 +307,8 @@ def normalize_signal(signal):
         "tactical_bias": signal.get("tactical_bias") if signal.get("tactical_bias") in biases else "NEUTRAL",
         "entry_mode": signal.get("entry_mode") if signal.get("entry_mode") in entry_modes else "NONE",
         "countertrend": bool(signal.get("countertrend", False)),
+        "plan_change": str(signal.get("plan_change") or "KEEP").upper() if str(signal.get("plan_change") or "KEEP").upper() in {"KEEP", "ADJUST", "CANCEL", "NEW"} else "KEEP",
+        "plan_reason": str(signal.get("plan_reason") or "")[:220],
         "trial_zone": None,
         "trigger": str(signal.get("trigger") or "")[:220],
         "confirm_price": None,
@@ -295,6 +356,86 @@ def normalize_signal(signal):
     return out
 
 
+
+def merge_execution_plan(previous_state, signal):
+    """让执行计划跨 5 分钟分析轮次连续。"""
+    signal = normalize_signal(signal)
+    prev = normalize_signal(previous_state or {})
+    prev_zone = prev.get("trial_zone")
+    prev_dir = prev.get("bias")
+    change = signal.get("plan_change", "KEEP")
+    macro_flip = signal.get("macro_change") == "FLIP"
+
+    # 明确取消：只有 CANCEL / 主线翻转 / NO_TRADE 才允许清掉旧计划。
+    if change == "CANCEL" or macro_flip or signal.get("action") == "NO_TRADE":
+        if change != "CANCEL" and macro_flip:
+            signal["plan_change"] = "CANCEL"
+            signal["plan_reason"] = signal.get("plan_reason") or "大周期主线已翻转，旧执行计划取消"
+        return signal
+
+    # 没有上一轮执行计划，无需继承。
+    if not prev_zone or prev_dir not in {"LONG", "SHORT"}:
+        return signal
+
+    cur_dir = signal.get("bias")
+    # 本轮明确给了反向执行计划，视作新计划。
+    if cur_dir in {"LONG", "SHORT"} and cur_dir != prev_dir:
+        signal["plan_change"] = "NEW"
+        signal["plan_reason"] = signal.get("plan_reason") or "执行方向发生变化"
+        return signal
+
+    # 本轮给出了同方向的新试仓区：尊重本轮，WAIT 改为 PREPARE。
+    if signal.get("trial_zone"):
+        if signal.get("bias") == "NEUTRAL":
+            signal["bias"] = prev_dir
+        if signal.get("action") == "WAIT":
+            signal["action"] = f"PREPARE_{prev_dir}"
+        if change == "KEEP" and signal.get("trial_zone") != prev_zone:
+            signal["plan_change"] = "ADJUST"
+        # 同方向计划：本轮漏给的执行字段从上一轮补齐，避免连续计划断档
+        for k in ("trigger", "invalidation"):
+            if not signal.get(k):
+                signal[k] = prev.get(k, "")
+        for k in ("confirm_price", "stop"):
+            if not signal.get(k):
+                signal[k] = prev.get(k)
+        if not signal.get("targets"):
+            signal["targets"] = prev.get("targets", [])
+        if signal.get("entry_mode") == "NONE":
+            signal["entry_mode"] = prev.get("entry_mode", "NONE")
+        if signal.get("tactical_bias") == "NEUTRAL" and prev.get("tactical_bias") in {"LONG", "SHORT"}:
+            signal["tactical_bias"] = prev.get("tactical_bias")
+        signal["allow_chase"] = bool(signal.get("allow_chase") or prev.get("allow_chase", False))
+        return signal
+
+    # 关键兜底：WAIT + null 但没有 CANCEL => 沿用上一轮计划。
+    if signal.get("action") == "WAIT" and change in {"KEEP", "ADJUST"}:
+        signal["bias"] = prev_dir
+        signal["action"] = f"PREPARE_{prev_dir}"
+        if signal.get("entry_mode") == "NONE":
+            signal["entry_mode"] = prev.get("entry_mode", "NONE")
+        signal["trial_zone"] = prev_zone
+        signal["trigger"] = signal.get("trigger") or prev.get("trigger", "")
+        signal["confirm_price"] = signal.get("confirm_price") or prev.get("confirm_price")
+        signal["stop"] = signal.get("stop") or prev.get("stop")
+        signal["targets"] = signal.get("targets") or prev.get("targets", [])
+        signal["invalidation"] = signal.get("invalidation") or prev.get("invalidation", "")
+        signal["allow_chase"] = bool(signal.get("allow_chase") or prev.get("allow_chase", False))
+        if signal.get("tactical_bias") == "NEUTRAL" and prev.get("tactical_bias") in {"LONG", "SHORT"}:
+            signal["tactical_bias"] = prev.get("tactical_bias")
+        prev_ev = prev.get("evidence") if isinstance(prev.get("evidence"), dict) else {}
+        cur_ev = signal.get("evidence") if isinstance(signal.get("evidence"), dict) else {}
+        for k in ("location", "resonance", "turnover", "room"):
+            if cur_ev.get(k, "UNKNOWN") == "UNKNOWN" and prev_ev.get(k):
+                cur_ev[k] = prev_ev[k]
+        signal["evidence"] = cur_ev
+        if prev.get("countertrend"):
+            signal["countertrend"] = True
+        signal["plan_change"] = "KEEP"
+        signal["plan_reason"] = signal.get("plan_reason") or "本轮未出现取消依据，沿用上一轮执行计划"
+    return signal
+
+
 def split_analysis_signal(raw):
     """从模型输出末尾提取 [[SIGNAL]] JSON，返回(正文, signal)。"""
     raw = (raw or "").strip()
@@ -317,9 +458,11 @@ def split_analysis_signal(raw):
 
 
 def process_symbol(symbol, previous_state=None):
-    """处理单品种：多周期K线 → V7分析 → 结构化信号。"""
+    """处理单品种：多周期K线 → V7.1分析 → 连续结构化信号。"""
     log(f"[autopilot] [{symbol}] 开始...")
     t0 = time.time()
+    # 从旧版迁移时，market_state 可能只有大周期字段；先从当天日志恢复最近有效执行计划。
+    previous_state = recover_recent_execution_plan(symbol, previous_state)
     stdout, stderr = run_klines(symbol)
     if not stdout:
         log(f"[autopilot] [{symbol}] 跳过（K线获取失败）")
@@ -339,6 +482,9 @@ def process_symbol(symbol, previous_state=None):
     if signal.get("macro_change") == "FLIP" and not signal.get("macro_invalidation"):
         signal["macro_bias"] = prev_bias if prev_bias in {"LONG", "SHORT"} else signal["macro_bias"]
         signal["macro_change"] = "KEEP"
+
+    # V7.1：执行计划也必须跨轮次连续。WAIT 不再自动清空上一轮试仓计划。
+    signal = merge_execution_plan(previous_state, signal)
 
     elapsed = time.time() - t0
     log(f"[autopilot] [{symbol}] 完成 ({elapsed:.0f}s) 主线={signal.get('macro_bias')} / 执行={signal.get('action')}")
@@ -456,16 +602,9 @@ def main():
     # 保存本轮大周期状态，供下一轮继承。
     for r in results:
         sig = r.get("signal") or {}
-        market_state[r["symbol"]] = {
-            "macro_bias": sig.get("macro_bias", "NEUTRAL"),
-            "macro_regime": sig.get("macro_regime", "TRANSITION"),
-            "macro_change": sig.get("macro_change", "KEEP"),
-            "macro_strength": sig.get("macro_strength", "WEAK"),
-            "macro_thesis": sig.get("macro_thesis", ""),
-            "macro_invalidation": sig.get("macro_invalidation", ""),
-            "tactical_bias": sig.get("tactical_bias", "NEUTRAL"),
-            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
+        # V7.1：保存完整结构化状态，包含执行计划。
+        market_state[r["symbol"]] = dict(normalize_signal(sig))
+        market_state[r["symbol"]]["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_market_state(market_state)
 
     # 2. 写每日文件（每个品种）

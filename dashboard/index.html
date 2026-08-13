@@ -358,7 +358,7 @@ body{font-size:15px;line-height:1.58}
         </div>
       </section>
       <section class="macro-panel" id="macroPanel">
-        <div class="macro-head"><div><h2>大周期主线</h2><p>1D / 4H 决定方向，2H / 1H 判断延续或回调；30m 以下只负责找入场，不允许随意翻转主线。</p></div><span class="macro-anchor">V7 · 先看大周期</span></div>
+        <div class="macro-head"><div><h2>大周期主线</h2><p>1D / 4H 决定方向，2H / 1H 判断延续或回调；30m 以下只负责找入场，不允许随意翻转主线。</p></div><span class="macro-anchor">V7.1 · 主线 + 计划连续</span></div>
         <div class="macro-grid">
           <div class="macro-card macro-main neutral" id="macroMainCard"><b>1D / 4H 主线</b><strong id="macroBias">读取中</strong><p id="macroThesis">等待新版结构化大周期信号。</p><span class="macro-regime" id="macroRegime">市场阶段 --</span></div>
           <div class="macro-card tactical"><b>2H / 1H 当前阶段</b><strong id="tacticalBias">--</strong><p id="tacticalNote">判断是顺势延续、回调还是反弹。</p></div>
@@ -480,7 +480,7 @@ body{font-size:15px;line-height:1.58}
     </main>
   </div>
 </div>
-<script id="appDataScript" src="data.js?v=20260813143526"></script>
+<script id="appDataScript" src="data.js"></script>
 <script>
 (function(){
 'use strict';
@@ -564,12 +564,36 @@ function normalizeStructuredSignal(raw){
   const zone=Array.isArray(raw.trial_zone)&&raw.trial_zone.length===2?normalizeZone(raw.trial_zone[0],raw.trial_zone[1]):null;
   const targets=Array.isArray(raw.targets)?raw.targets.map(Number).filter(x=>Number.isFinite(x)&&x>0).slice(0,3):[];
   const num=v=>{v=Number(v);return Number.isFinite(v)&&v>0?v:null};
-  return {action,bias:String(raw.bias||'NEUTRAL').toUpperCase(),macroBias:String(raw.macro_bias||raw.bias||'NEUTRAL').toUpperCase(),macroRegime:String(raw.macro_regime||'TRANSITION').toUpperCase(),macroChange:String(raw.macro_change||'KEEP').toUpperCase(),macroStrength:String(raw.macro_strength||'WEAK').toUpperCase(),macroThesis:String(raw.macro_thesis||''),macroInvalidation:String(raw.macro_invalidation||''),tacticalBias:String(raw.tactical_bias||raw.bias||'NEUTRAL').toUpperCase(),entryMode:String(raw.entry_mode||'NONE').toUpperCase(),countertrend:!!raw.countertrend,zone,trigger:String(raw.trigger||''),confirmPrice:num(raw.confirm_price),invalid:num(raw.stop),targets,invalidation:String(raw.invalidation||''),allowChase:!!raw.allow_chase,evidence:raw.evidence&&typeof raw.evidence==='object'?raw.evidence:{}};
+  return {action,bias:String(raw.bias||'NEUTRAL').toUpperCase(),macroBias:String(raw.macro_bias||raw.bias||'NEUTRAL').toUpperCase(),macroRegime:String(raw.macro_regime||'TRANSITION').toUpperCase(),macroChange:String(raw.macro_change||'KEEP').toUpperCase(),macroStrength:String(raw.macro_strength||'WEAK').toUpperCase(),macroThesis:String(raw.macro_thesis||''),macroInvalidation:String(raw.macro_invalidation||''),tacticalBias:String(raw.tactical_bias||raw.bias||'NEUTRAL').toUpperCase(),entryMode:String(raw.entry_mode||'NONE').toUpperCase(),countertrend:!!raw.countertrend,planChange:String(raw.plan_change||'KEEP').toUpperCase(),planReason:String(raw.plan_reason||''),zone,trigger:String(raw.trigger||''),confirmPrice:num(raw.confirm_price),invalid:num(raw.stop),targets,invalidation:String(raw.invalidation||''),allowChase:!!raw.allow_chase,evidence:raw.evidence&&typeof raw.evidence==='object'?raw.evidence:{}};
+}
+function recentStructuredPlanFallback(e,currentSignal,price){
+  try{
+    if(!e||currentSignal?.planChange==='CANCEL'||currentSignal?.macroChange==='FLIP'||currentSignal?.action==='NO_TRADE')return null;
+    const sym=e.symbol||curSym,list=allEntries(curDate,sym),curTs=String(e.ts||e.period||'');
+    let pos=list.findIndex(x=>x===e);if(pos<0)pos=list.findIndex(x=>String(x.ts||x.period||'')===curTs);if(pos<0)pos=list.length;
+    let checked=0;
+    for(let n=pos-1;n>=0&&checked<12;n--,checked++){
+      const pe=list[n],ps=normalizeStructuredSignal(pe?.signal);if(!ps)continue;
+      if(ps.planChange==='CANCEL'||ps.macroChange==='FLIP')break;
+      if(!ps.zone||!['LONG','SHORT'].includes(ps.bias))continue;
+      if(currentSignal?.macroBias&&currentSignal.macroBias!=='NEUTRAL'&&ps.macroBias&&ps.macroBias!=='NEUTRAL'&&currentSignal.macroBias!==ps.macroBias)break;
+      const dir=ps.bias==='LONG'?'long':'short';let status='waiting',distancePct=null;
+      if(price){if(price>=ps.zone.lo&&price<=ps.zone.hi){status='in-zone';distancePct=0}else{const edge=price<ps.zone.lo?ps.zone.lo:ps.zone.hi;distancePct=Math.abs(edge-price)/price*100;status=distancePct<=.35?'near':'waiting'}}
+      const merged={...ps,action:`PREPARE_${ps.bias}`,macroBias:currentSignal?.macroBias||ps.macroBias,macroRegime:currentSignal?.macroRegime||ps.macroRegime,macroChange:currentSignal?.macroChange||'KEEP',macroStrength:currentSignal?.macroStrength||ps.macroStrength,macroThesis:currentSignal?.macroThesis||ps.macroThesis,macroInvalidation:currentSignal?.macroInvalidation||ps.macroInvalidation,planChange:'KEEP',planReason:'最新一轮未明确取消，前端沿用最近有效执行计划'};
+      return {dir,zone:ps.zone,status,distancePct,condition:ps.trigger||'沿用上一轮执行条件',source:'计划继承',context:'',score:4,invalid:ps.invalid,target:ps.targets?.[0]||null,targets:ps.targets||[],structured:true,inherited:true,signal:merged,confirmPrice:ps.confirmPrice,allowChase:ps.allowChase,invalidation:ps.invalidation};
+    }
+  }catch(err){}
+  return null;
 }
 function setupFromEntry(e,text,price){
   const s=normalizeStructuredSignal(e?.signal);
   if(!s)return {...extractTradeSetup(text,price),structured:false,signal:null};
+  if(s.planChange==='CANCEL')return {dir:null,zone:null,status:'none',distancePct:null,condition:s.planReason||'上一轮计划已明确取消',source:'结构化信号',context:'',score:0,invalid:null,target:null,targets:[],structured:true,cancelled:true,signal:s,confirmPrice:null,allowChase:false,invalidation:s.invalidation};
   let dir=null;if(/LONG/.test(s.action))dir='long';else if(/SHORT/.test(s.action))dir='short';else if(s.bias==='LONG'&&/^PREPARE/.test(s.action))dir='long';else if(s.bias==='SHORT'&&/^PREPARE/.test(s.action))dir='short';
+  // V7.1：WAIT + trial_zone=null 不再自动清空。先尝试从最近 12 轮中恢复同一大周期下的有效执行计划。
+  if(!dir&&!s.zone&&s.action==='WAIT'){
+    const inherited=recentStructuredPlanFallback(e,s,price);if(inherited)return inherited;
+  }
   let status='none',distancePct=null;
   if(s.zone&&price){if(price>=s.zone.lo&&price<=s.zone.hi){status='in-zone';distancePct=0}else{const edge=price<s.zone.lo?s.zone.lo:s.zone.hi;distancePct=Math.abs(edge-price)/price*100;status=distancePct<=.35?'near':'waiting'}}
   else if(s.zone)status='waiting';
@@ -611,7 +635,7 @@ function saveJSON(key,v){try{localStorage.setItem(key,JSON.stringify(v))}catch(e
 function pctGap(a,b){a=Number(a);b=Number(b);if(!Number.isFinite(a)||!Number.isFinite(b)||a<=0||b<=0)return Infinity;return Math.abs(a-b)/Math.max(a,b)*100}
 function zoneCenter(z){return z?(Number(z.lo)+Number(z.hi))/2:null}
 function zoneOverlap(a,b){if(!a||!b)return false;return Math.max(a.lo,b.lo)<=Math.min(a.hi,b.hi)}
-function setupSnapshot(e,setup){return {dir:setup?.dir||null,zone:setup?.zone?{lo:Number(setup.zone.lo),hi:Number(setup.zone.hi)}:null,confirmPrice:Number(setup?.confirmPrice)||null,invalid:Number(setup?.invalid)||null,action:setup?.signal?.action||'',analysisTs:e?.ts||e?.period||'',symbol:e?.symbol||curSym}}
+function setupSnapshot(e,setup){return {dir:setup?.dir||null,zone:setup?.zone?{lo:Number(setup.zone.lo),hi:Number(setup.zone.hi)}:null,confirmPrice:Number(setup?.confirmPrice)||null,invalid:Number(setup?.invalid)||null,targets:Array.isArray(setup?.targets)?setup.targets.slice(0,3):[],condition:setup?.condition||'',allowChase:!!setup?.allowChase,action:setup?.signal?.action||'',planChange:setup?.signal?.planChange||'KEEP',inherited:!!setup?.inherited,analysisTs:e?.ts||e?.period||'',symbol:e?.symbol||curSym}}
 function samePlan(prev,setup){
   if(!prev||!setup||!prev.dir||!setup.dir||prev.dir!==setup.dir)return false;
   const action=String(setup?.signal?.action||'').toUpperCase();if(action==='NO_TRADE')return false;
@@ -638,10 +662,19 @@ function resolveSignalChain(e,setup){
   const sym=e?.symbol||curSym,slot=`doge_v62_active:${curDate}:${sym}`,snap=setupSnapshot(e,setup),now=Date.now();let meta=loadJSON(slot);
   if(!meta){const legacy=legacyLifeCandidate(e,setup);if(legacy){meta={key:legacy.key,plan:snap,createdAt:Math.min(Number(legacy.rec.touchedAt)||now,now),lastSeenAt:now,lastAnalysisTs:snap.analysisTs,updates:0,migrated:true};saveJSON(slot,meta);return {key:meta.key,meta,continued:true,migrated:true}}}
   if(meta?.key){
-    const prevRec=loadLifeRecord(meta.key),terminal=!!(prevRec.invalidAt||prevRec.targetAt);
+    const prevRec=loadLifeRecord(meta.key),terminal=!!(prevRec.invalidAt||prevRec.targetAt||prevRec.cancelledAt);
+    // 明确 CANCEL 才结束旧计划；WAIT 本身不再具备清空权限。
+    if(!terminal&&setup?.signal?.planChange==='CANCEL'){
+      prevRec.cancelledAt=now;prevRec.cancelReason=setup?.signal?.planReason||'最新分析明确取消上一轮计划';saveLifeRecord(meta.key,prevRec);
+      meta.lastSeenAt=now;meta.lastAnalysisTs=snap.analysisTs;meta.cancelledAt=now;saveJSON(slot,meta);return {key:meta.key,meta,continued:false,cancelled:true};
+    }
     if(!terminal&&samePlan(meta.plan,setup)){
       const isNewRound=snap.analysisTs&&snap.analysisTs!==meta.lastAnalysisTs;
       meta.plan=snap;meta.lastSeenAt=now;if(isNewRound){meta.updates=(Number(meta.updates)||0)+1;meta.lastAnalysisTs=snap.analysisTs;meta.lastContinuedAt=now}saveJSON(slot,meta);return {key:meta.key,meta,continued:isNewRound};
+    }
+    // 防守层：最新一轮只是 WAIT/null 时，不用一个 none-plan 覆盖仍在运行的旧计划。
+    if(!terminal&&!setup?.dir&&!setup?.zone&&String(setup?.signal?.action||'').toUpperCase()==='WAIT'){
+      meta.lastSeenAt=now;meta.lastAnalysisTs=snap.analysisTs;saveJSON(slot,meta);return {key:meta.key,meta,continued:true,softWait:true};
     }
   }
   const zone=setup?.zone?`${setup.zone.lo}-${setup.zone.hi}`:'none',seed=e?.ts||e?.period||String(now),key=`doge_v62:${curDate}:${sym}:${seed}:${setup?.dir||'none'}:${zone}`;
@@ -660,7 +693,8 @@ function deriveLifecycle(e,setup,price){
   if(rec.touchedAt&&price&&rec.entryPrice&&dir){const fav=(dir==='long'?(price-rec.entryPrice):(rec.entryPrice-price))/rec.entryPrice*100,adv=-fav;rec.mfe=Math.max(Number(rec.mfe)||0,fav);rec.mae=Math.max(Number(rec.mae)||0,adv)}
   if(target&&price&&dir&&((dir==='long'&&price>=target)||(dir==='short'&&price<=target))&&!rec.targetAt)rec.targetAt=now;
   const fresh=typeof freshnessInfo==='function'?freshnessInfo(e):{cls:'live'};
-  if(rec.invalidAt){state='invalid';reason='价格已触及失效 / 止损条件'}
+  if(rec.cancelledAt){state='cancelled';reason=rec.cancelReason||'最新分析已明确取消上一轮计划'}
+  else if(rec.invalidAt){state='invalid';reason='价格已触及失效 / 止损条件'}
   else if(rec.targetAt){state='target';reason='第一目标已经触及，进入持仓管理 / 分仓止盈'}
   else if(fresh.cls==='stale'){state='expired';reason='最新观点已经过期，旧信号不再作为新开仓依据'}
   else if(action==='NO_TRADE'){state='no-trade';reason='结构化信号明确要求不参与'}
@@ -677,17 +711,17 @@ function evidenceClass(v){v=String(v||'UNKNOWN').toUpperCase();if(['GOOD','YES']
 function evidenceText(v){const m={GOOD:'优',YES:'已形成',OK:'一般',PARTIAL:'部分',BAD:'差',NO:'未形成',UNKNOWN:'未知'};return m[String(v||'UNKNOWN').toUpperCase()]||'未知'}
 function renderLifecycle(e,text,d){
   const lifePrice=isLatestDate()?lastPrice:null,setup=d.setup||setupFromEntry(e,text,lifePrice),life=deriveLifecycle(e,setup,lifePrice),structured=!!setup.structured;
-  const src=$('signalSource');src.textContent=structured?'结构化信号':'兼容识别';src.className='signal-source'+(structured?'':' legacy');
+  const src=$('signalSource');src.textContent=setup.inherited?'沿用上一轮计划':structured?'结构化信号':'兼容识别';src.className='signal-source'+(structured?'':' legacy');
   const order=['waiting','near','trial','confirmed','triggered','finished'];let active='waiting',terminal=false;
-  if(life.state==='near')active='near';else if(life.state==='trial')active='trial';else if(life.state==='confirmed')active='confirmed';else if(life.state==='triggered')active='triggered';else if(['invalid','expired','target','no-trade'].includes(life.state)){active='finished';terminal=true}
+  if(life.state==='near')active='near';else if(life.state==='trial')active='trial';else if(life.state==='confirmed')active='confirmed';else if(life.state==='triggered')active='triggered';else if(['invalid','expired','target','no-trade','cancelled'].includes(life.state)){active='finished';terminal=true}
   const idx=order.indexOf(active);document.querySelectorAll('#lifecycleTrack .life-step').forEach((el,i)=>{el.className='life-step';if(i<idx)el.classList.add('done');if(i===idx){el.classList.add('active');if(setup.dir)el.classList.add(setup.dir);if(terminal)el.classList.add('terminal')}});
-  const labels={waiting:'等待到位',near:'接近机会区',trial:'试仓条件已到',confirmed:'确认入场已触发',triggered:'试仓已触发',invalid:'计划已失效',expired:'信号已过期',target:'目标已触及','no-trade':'明确不参与'};
+  const labels={waiting:'等待到位',near:'接近机会区',trial:'试仓条件已到',confirmed:'确认入场已触发',triggered:'试仓已触发',invalid:'计划已失效',cancelled:'计划已明确取消',expired:'信号已过期',target:'目标已触及','no-trade':'明确不参与'};
   $('lifeHeadline').textContent=labels[life.state]||life.state;$('lifeReason').textContent=life.reason;
   if(setup.dir&&setup.zone){$('trialControl').textContent=`${setup.dir==='long'?'做多':'做空'} · ${zoneText(setup.zone)}`;$('trialControl').className=setup.status==='in-zone'?'go':setup.status==='near'?'near':'wait';$('trialControlSub').textContent=setup.status==='in-zone'?'当前位置已在试仓区':setup.status==='near'?'已经接近，准备盯盘':tradeSetupDistance(setup,lastPrice)}else{$('trialControl').textContent='暂无明确试仓';$('trialControl').className='off';$('trialControlSub').textContent='没有明确试仓区时不强行给入场'}
   const cp=setup.confirmPrice;$('confirmControl').textContent=cp?`${setup.dir==='short'?'跌破':'站上'} ${formatPrice(cp)}`:(setup.signal?.trigger||setup.condition||'等待确认条件');$('confirmControlSub').textContent=life.state==='confirmed'?'确认条件已经触发':'与试仓分开判断，未确认前不当成正式入场';
   const chase=setup.allowChase===true;$('chaseControl').textContent=chase?'允许':'禁止';$('chaseControl').className=chase?'yes':'no';$('chaseControlSub').textContent=chase?'仅按最新结构化信号':'默认不追；错过试仓区就放弃追价';
   const ev=setup.signal?.evidence||{};const items=[['位置',ev.location],['共振',ev.resonance],['换手',ev.turnover],['空间',ev.room]];$('evidenceRow').innerHTML=items.map(([k,v])=>`<span class="evidence-chip ${evidenceClass(v)}"><i></i>${k} · ${evidenceText(v)}</span>`).join('');
-  const stats=[];if(life.chain?.meta?.updates)stats.push(`计划连续更新 <strong>${life.chain.meta.updates} 轮</strong>`);if(life.chain?.migrated)stats.push(`<strong>已继承 V6.1 状态</strong>`);if(life.rec.touchedAt)stats.push(`试仓触达 <strong>${new Date(life.rec.touchedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(life.rec.confirmedAt)stats.push(`确认触发 <strong>${new Date(life.rec.confirmedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(Number.isFinite(life.rec.mfe))stats.push(`触达后最大有利 <strong>${life.rec.mfe.toFixed(2)}%</strong>`);if(Number.isFinite(life.rec.mae))stats.push(`最大不利 <strong>${life.rec.mae.toFixed(2)}%</strong>`);$('lifeStats').innerHTML=stats.map(x=>`<span>${x}</span>`).join('');
+  const stats=[];if(setup.inherited)stats.push(`<strong>沿用上一轮有效计划</strong>`);if(life.chain?.meta?.updates)stats.push(`计划连续更新 <strong>${life.chain.meta.updates} 轮</strong>`);if(life.chain?.migrated)stats.push(`<strong>已继承 V6.1 状态</strong>`);if(life.rec.touchedAt)stats.push(`试仓触达 <strong>${new Date(life.rec.touchedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(life.rec.confirmedAt)stats.push(`确认触发 <strong>${new Date(life.rec.confirmedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(Number.isFinite(life.rec.mfe))stats.push(`触达后最大有利 <strong>${life.rec.mfe.toFixed(2)}%</strong>`);if(Number.isFinite(life.rec.mae))stats.push(`最大不利 <strong>${life.rec.mae.toFixed(2)}%</strong>`);$('lifeStats').innerHTML=stats.map(x=>`<span>${x}</span>`).join('');
   lifecycleAlert(e,setup,life);
   return life;
 }
@@ -823,7 +857,7 @@ function directionalPlan(text,dir){
   return dir==='long'?'关键压力收盘站稳后，再等回踩/换手确认，不追第一根。':'关键支撑收盘失守后，再等反抽不过/换手确认，不在支撑上追空。';
 }
 function formatPrice(v){if(v===null||v===undefined||!Number.isFinite(+v))return '--';return (+v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
-function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V7 大周期主线版`}
+function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V7.1 计划连续版`}
 function nearestLevels(price,levels){
   if(!price||!levels.length)return {res:null,sup:null};
   const vals=levels.map(x=>x.v).filter(Number.isFinite);

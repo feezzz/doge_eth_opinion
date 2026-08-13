@@ -415,8 +415,10 @@ def main():
 
     # 4. 刷新仪表盘数据（先生成，再一起 Git push）
     try:
-        subprocess.run(["python", str(PROJECT_ROOT / "dashboard" / "build_dashboard.py")],
-                       timeout=30, capture_output=True)
+        proc = subprocess.run(["python", os.path.join(GIT_REPO, "dashboard", "build_dashboard.py")],
+                              timeout=30, capture_output=True, text=True, encoding="utf-8")
+        if proc.returncode != 0:
+            log(f"[autopilot] dashboard 刷新失败: {proc.stderr[:200]}")
     except Exception as e:
         log(f"[autopilot] dashboard 刷新失败: {e}")
 

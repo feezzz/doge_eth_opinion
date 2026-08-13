@@ -749,7 +749,7 @@ function extractLevels(text){
   return a.slice(0,7);
 }
 function timeframeStatus(text,tf){
-  const aliases={"5m":['5m','5分钟'],"15m":['15m','15分钟'],"30m":['30m','30分钟'],"1H":['1H','1h','1小时'],"4H":['4H','4h','4小时']};
+  const aliases={"5m":['5m','5分钟'],"15m":['15m','15分钟'],"30m":['30m','30分钟'],"1H":['1H','1h','1小时'],"2H":['2H','2h','2小时'],"4H":['4H','4h','4小时'],"1D":['1D','1d','日线','日K']};
   const sentences=splitSentences(text);const hit=sentences.filter(x=>aliases[tf].some(a=>x.includes(a))).slice(-2).join(' ');
   if(!hit)return {cls:'neutral',label:'未明确',detail:'等待新描述'};
   const bull=scoreKeywords(hit,['上移','阳线','偏多','多头','走强','放量拉升','站稳','反弹','共振往上'],['下移','阴线','偏空','空头','走弱','阴跌','破位']);

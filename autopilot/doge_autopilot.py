@@ -39,6 +39,7 @@ MSG_PATH       = str(HERE / "feishu_msg.txt")
 FEISHU_SEND    = str(HERE / "feishu_send.py")
 GIT_REPO       = str(PROJECT_ROOT)
 POSITION_FILE  = str(HERE / "positions.json")
+MARKET_STATE_FILE = str(HERE / "market_state.json")
 
 DEEPSEEK_KEY   = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_URL   = "https://api.deepseek.com/v1/chat/completions"
@@ -55,50 +56,58 @@ def log(msg):
         pass
 
 # ── 狗哥交易体系系统提示 ──────────────────────────
-SYSTEM_PROMPT = """你是"狗哥(doge)"，加密货币交易员，主做ETH日内短线，纯技术流多级别联动分析。
+SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海力士(SKHY)、镁光(MU) 的多周期行情分析。V7 的核心不是追逐 5 分钟涨跌，而是先确定大周期主线，再用小周期找执行位置。
 
-## 分析风格
-- 口语化中文，像交易员复盘，不是直播喊单
-- 先讲核心变化/节奏，再点盯盘关键位
-- 变化大详细展开，没变化简短带过，2-5句话
-- 不做机械罗列，只点出现变化的周期
-- 禁止编造数据中不存在的数字（如自己算MA值）
+## 周期权重（必须严格遵守）
+1. 1D + 4H：决定“大周期主线”和市场阶段，权重最高。
+2. 2H + 1H：决定当前主方向是否延续、回调还是转弱。
+3. 30m + 15m：只负责判断结构、回踩/反抽、关键位是否成熟。
+4. 5m：只负责换手K、收盘确认和精确入场，绝不能因为 5m 一两根K就把大周期从多翻空或从空翻多。
 
-## 核心概念
-- 级别: 5m/15m/30m/1H/4H
-- 三线共振: 15m+30m+1H 同方向
-- 四线共振: +4H 同方向
-- 对抗行情: 相邻级别方向相反
-- 换手K: 红转绿/绿转红的关键K线
-- 漂: 本该成形的方向没走成
-- MA45: 行情加速带，1H强实体突破即起飞
-- MA5: 逃跑线/止盈线
-- 量价背离、重心上移/下移、V反、假突破、多空双杀、射击之星、锤子线
-- 分仓止盈: 到目标位平50-75%，留小部分博延续
+## 大周期稳定规则
+- 每次会提供“上一轮大周期状态”。如果 1D/4H 的核心结构没有被明确破坏，macro_bias 必须继承上一轮。
+- 若 5m/15m 与 4H/1D 反向，只描述为“短线回调/反弹/对抗”，不要直接改主线。
+- macro_bias 只有在 1D/4H 或至少 4H+1H 出现明确结构性失效时才允许 FLIP；必须在正文说明失效依据。
+- 默认不做逆大周期试仓。只有 macro_bias=NEUTRAL，或 4H 明确箱体且 2H/1H 同步反转时，才允许 countertrend。
+- 重点回答：未来数小时到 1-2 天更应该偏向哪一边、哪里是主线失效位、回调到哪里值得等。
 
-## 纪律
-- 最大回撤10%，永不扛单
-- 宁可错过不可做错，不追行情
-- 盯死关键位，位置不到不动手
+## 狗哥体系
+- 收盘确认优先，盘中刺穿不算突破。
+- 15m/30m/1H 共振是执行确认，4H/1D 决定方向背景。
+- 换手K是入场时机，不是方向来源。
+- 点差/空间不足就放弃；不追高、不追低、不扛单。
+- 分仓止盈，到目标位先落袋大部分，留小仓博大周期延续。
 
-## 输出格式
-先输出分析正文，2-5句话。不要输出标题（###），不要用代码块。
-正文直接以行情描述开头。不输出"兄弟们"等直播开场白。
+## 正文格式
+输出 4-7 句话，保持口语化，但顺序固定：
+1. “大周期主线：……” —— 必须先说 1D/4H 结论。
+2. “当前阶段：……” —— 说明趋势延续、回调、反弹、箱体或转折观察。
+3. “短线状态：……” —— 15m/5m 只作为执行层，不可盖过主线。
+4. “关键位置：……” —— 最重要的主线支撑/压力/失效位。
+5. “接下来计划：……” —— 顺大周期优先，告诉用户等待什么位置和条件。
+不要机械罗列全部K线，不要编造输入里没有的数值。
 
-正文后必须另起一行输出一条机器信号，格式严格为：
-[[SIGNAL]]{"action":"WAIT","bias":"NEUTRAL","trial_zone":null,"trigger":"","confirm_price":null,"stop":null,"targets":[],"invalidation":"","allow_chase":false,"evidence":{"location":"UNKNOWN","resonance":"UNKNOWN","turnover":"UNKNOWN","room":"UNKNOWN"}}
+正文后另起一行输出机器信号：
+[[SIGNAL]]{"action":"WAIT","bias":"NEUTRAL","macro_bias":"NEUTRAL","macro_regime":"RANGE","macro_change":"KEEP","macro_strength":"WEAK","macro_thesis":"","macro_invalidation":"","tactical_bias":"NEUTRAL","entry_mode":"NONE","countertrend":false,"trial_zone":null,"trigger":"","confirm_price":null,"stop":null,"targets":[],"invalidation":"","allow_chase":false,"evidence":{"location":"UNKNOWN","resonance":"UNKNOWN","turnover":"UNKNOWN","room":"UNKNOWN"}}
 
 字段约束：
-- action 只能是 TRY_LONG / TRY_SHORT / PREPARE_LONG / PREPARE_SHORT / WAIT / NO_TRADE
-- bias 只能是 LONG / SHORT / NEUTRAL
-- trial_zone 只有在正文明确给出可试仓/可接/可空的价格或区间时填写 [低,高]，否则 null
-- confirm_price 只有在正文明确给出确认价位时填写，否则 null
-- stop、targets 只允许使用正文明确提到且来自输入K线/关键位的数据；没有就 null / []，绝不编造
-- allow_chase 默认 false，只有正文明确允许追单才可 true
-- evidence 四项没有依据就 UNKNOWN，不要为了填满而猜
-- TRY_LONG / TRY_SHORT 只在当前最新价格已经进入或非常接近明确试仓区、且正文允许轻仓尝试时使用；价格尚未到计划区域时必须用 PREPARE_LONG / PREPARE_SHORT
-- 如果只是“等确认、等回踩、位置不到”，有明确方向时用 PREPARE_LONG / PREPARE_SHORT，否则 WAIT；不要把所有情况都写成 NO_TRADE
-- 机器信号不要解释，不要加 Markdown，不要再输出其他内容。
+- action: TRY_LONG / TRY_SHORT / PREPARE_LONG / PREPARE_SHORT / WAIT / NO_TRADE
+- bias: 当前执行方向 LONG / SHORT / NEUTRAL
+- macro_bias: 大周期主线 LONG / SHORT / NEUTRAL
+- macro_regime: TREND_UP / TREND_DOWN / RANGE / TRANSITION
+- macro_change: KEEP / STRENGTHEN / WEAKEN / FLIP；没有 4H/1D 级别依据禁止 FLIP
+- macro_strength: STRONG / MEDIUM / WEAK
+- macro_thesis: 30-100字说明为什么当前大周期主线成立
+- macro_invalidation: 主线失效条件，允许是自然语言；没有明确依据就空字符串
+- tactical_bias: 1H/30m 当前执行层方向 LONG / SHORT / NEUTRAL
+- entry_mode: PULLBACK / BREAKOUT / REBOUND / RANGE_EDGE / NONE
+- countertrend: 是否逆大周期；默认 false
+- trial_zone 仅在明确给出可尝试区域时填写 [低,高]
+- TRY 只代表当前价格已到试仓区；未到用 PREPARE
+- stop/targets/confirm_price 只能使用输入中明确可依据的价格，不能自己造
+- allow_chase 默认 false
+- evidence 无依据就 UNKNOWN
+- 机器信号不要解释，不要 Markdown。
 """
 
 # ── 函数 ────────────────────────────────────────────
@@ -144,20 +153,43 @@ def load_positions():
         return {}
 
 
-def call_deepseek(kline_data, symbol, scope, period):
+
+
+def load_market_state():
+    try:
+        with open(MARKET_STATE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def save_market_state(state):
+    try:
+        with open(MARKET_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(state, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        log(f"[autopilot] market_state 保存失败: {e}")
+
+
+def call_deepseek(kline_data, symbol, scope, period, previous_state=None):
     """调用 DeepSeek API 生成分析。"""
     if not DEEPSEEK_KEY:
         log(f"[autopilot] {symbol} DEEPSEEK_API_KEY 未设置，跳过 AI 分析")
         return None
 
+    prev = previous_state or {}
+    prev_text = json.dumps(prev, ensure_ascii=False, separators=(",", ":")) if prev else "无（首次建立大周期主线）"
     user_prompt = f"""品种: {symbol}
 周期: {period}
 数据范围: {scope}
 
-K线数据:
+上一轮大周期状态:
+{prev_text}
+
+K线数据（按 1D→4H→2H→1H→30m→15m→5m 排列）:
 {kline_data}
 
-请按狗哥风格分析以上K线数据，2-5句话，并按系统要求在最后输出 [[SIGNAL]] JSON。"""
+请按 V7 大周期主导规则分析。先判断 1D/4H 主线是否延续，再看 2H/1H，最后才用 30m/15m/5m 讨论执行。不要因为短线一两根K反向就翻转 macro_bias。正文 4-7 句话，最后输出 [[SIGNAL]] JSON。"""
 
     req_data = {
         "model": DEEPSEEK_MODEL,
@@ -166,7 +198,7 @@ K线数据:
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 600
+        "max_tokens": 1000
     }
 
     req = urllib.request.Request(
@@ -195,20 +227,33 @@ def clean_analysis(analysis):
 
 
 def normalize_signal(signal):
-    """规范化 DeepSeek 的机器信号；缺失/异常字段安全回退。"""
+    """规范化 V7 结构化信号。"""
     if not isinstance(signal, dict):
         signal = {}
     actions = {"TRY_LONG", "TRY_SHORT", "PREPARE_LONG", "PREPARE_SHORT", "WAIT", "NO_TRADE"}
     biases = {"LONG", "SHORT", "NEUTRAL"}
+    regimes = {"TREND_UP", "TREND_DOWN", "RANGE", "TRANSITION"}
+    changes = {"KEEP", "STRENGTHEN", "WEAKEN", "FLIP"}
+    strengths = {"STRONG", "MEDIUM", "WEAK"}
+    entry_modes = {"PULLBACK", "BREAKOUT", "REBOUND", "RANGE_EDGE", "NONE"}
     out = {
         "action": signal.get("action") if signal.get("action") in actions else "WAIT",
         "bias": signal.get("bias") if signal.get("bias") in biases else "NEUTRAL",
+        "macro_bias": signal.get("macro_bias") if signal.get("macro_bias") in biases else "NEUTRAL",
+        "macro_regime": signal.get("macro_regime") if signal.get("macro_regime") in regimes else "TRANSITION",
+        "macro_change": signal.get("macro_change") if signal.get("macro_change") in changes else "KEEP",
+        "macro_strength": signal.get("macro_strength") if signal.get("macro_strength") in strengths else "WEAK",
+        "macro_thesis": str(signal.get("macro_thesis") or "")[:220],
+        "macro_invalidation": str(signal.get("macro_invalidation") or "")[:220],
+        "tactical_bias": signal.get("tactical_bias") if signal.get("tactical_bias") in biases else "NEUTRAL",
+        "entry_mode": signal.get("entry_mode") if signal.get("entry_mode") in entry_modes else "NONE",
+        "countertrend": bool(signal.get("countertrend", False)),
         "trial_zone": None,
-        "trigger": str(signal.get("trigger") or "")[:180],
+        "trigger": str(signal.get("trigger") or "")[:220],
         "confirm_price": None,
         "stop": None,
         "targets": [],
-        "invalidation": str(signal.get("invalidation") or "")[:180],
+        "invalidation": str(signal.get("invalidation") or "")[:220],
         "allow_chase": bool(signal.get("allow_chase", False)),
         "evidence": {},
     }
@@ -241,6 +286,12 @@ def normalize_signal(signal):
     for k in ("location", "resonance", "turnover", "room"):
         v = str(ev.get(k, "UNKNOWN")).upper()
         out["evidence"][k] = v if v in allowed_evidence else "UNKNOWN"
+
+    # 安全约束：逆大周期信号不能伪装成顺势。
+    if out["bias"] in {"LONG", "SHORT"} and out["macro_bias"] in {"LONG", "SHORT"} and out["bias"] != out["macro_bias"]:
+        out["countertrend"] = True
+    if out["countertrend"] and out["action"].startswith("TRY_"):
+        out["action"] = "WAIT"
     return out
 
 
@@ -265,36 +316,35 @@ def split_analysis_signal(raw):
     return body, normalize_signal(signal)
 
 
-def process_symbol(symbol):
-    """处理单个品种：取K线 → 分析，返回结果字典。"""
+def process_symbol(symbol, previous_state=None):
+    """处理单品种：多周期K线 → V7分析 → 结构化信号。"""
     log(f"[autopilot] [{symbol}] 开始...")
     t0 = time.time()
-
     stdout, stderr = run_klines(symbol)
     if not stdout:
         log(f"[autopilot] [{symbol}] 跳过（K线获取失败）")
         return None
-
     period, actual = parse_period_actual(stdout)
     scope = parse_scope(stderr)
-
-    raw = call_deepseek(stdout, symbol, scope, period)
+    raw = call_deepseek(stdout, symbol, scope, period, previous_state)
+    if not raw:
+        raw = f"大周期主线：{symbol} 本轮 AI 分析失败，沿用上一轮主线并等待下一轮数据。\n[[SIGNAL]]" + json.dumps(normalize_signal(previous_state or {}), ensure_ascii=False)
     analysis, signal = split_analysis_signal(raw)
-    if not analysis:
-        analysis = f"自动分析: {symbol} 周期 {period}, 详见K线数据。"
-        signal = normalize_signal({})
+
+    # 如果模型无充分依据却想翻转主线，优先继承上一轮，避免 5m 噪声造成来回翻。
+    prev_bias = str((previous_state or {}).get("macro_bias") or "NEUTRAL")
+    if prev_bias in {"LONG", "SHORT"} and signal["macro_bias"] != prev_bias and signal.get("macro_change") != "FLIP":
+        signal["macro_bias"] = prev_bias
+        signal["macro_change"] = "KEEP"
+    if signal.get("macro_change") == "FLIP" and not signal.get("macro_invalidation"):
+        signal["macro_bias"] = prev_bias if prev_bias in {"LONG", "SHORT"} else signal["macro_bias"]
+        signal["macro_change"] = "KEEP"
 
     elapsed = time.time() - t0
-    log(f"[autopilot] [{symbol}] 完成 ({elapsed:.0f}s)")
-
+    log(f"[autopilot] [{symbol}] 完成 ({elapsed:.0f}s) 主线={signal.get('macro_bias')} / 执行={signal.get('action')}")
     return {
-        "symbol": symbol,
-        "analysis": analysis,
-        "signal": signal,
-        "period": period,
-        "actual": actual,
-        "scope": scope,
-        "stdout": stdout,
+        "symbol": symbol, "analysis": analysis, "signal": signal, "period": period,
+        "actual": actual, "scope": scope, "stdout": stdout,
     }
 
 
@@ -385,10 +435,11 @@ def main():
 
     log(f"[autopilot] 启动 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ({len(SYMBOLS)}品种)")
 
-    # 1. 并行处理所有品种
+    # 1. 并行处理所有品种；上一轮大周期状态作为稳定锚点
+    market_state = load_market_state()
     results = []
     with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {executor.submit(process_symbol, s): s for s in SYMBOLS}
+        futures = {executor.submit(process_symbol, s, market_state.get(s)): s for s in SYMBOLS}
         for future in as_completed(futures):
             r = future.result()
             if r:
@@ -401,6 +452,21 @@ def main():
     # 按原始顺序排列
     symbol_order = {s: i for i, s in enumerate(SYMBOLS)}
     results.sort(key=lambda r: symbol_order.get(r["symbol"], 99))
+
+    # 保存本轮大周期状态，供下一轮继承。
+    for r in results:
+        sig = r.get("signal") or {}
+        market_state[r["symbol"]] = {
+            "macro_bias": sig.get("macro_bias", "NEUTRAL"),
+            "macro_regime": sig.get("macro_regime", "TRANSITION"),
+            "macro_change": sig.get("macro_change", "KEEP"),
+            "macro_strength": sig.get("macro_strength", "WEAK"),
+            "macro_thesis": sig.get("macro_thesis", ""),
+            "macro_invalidation": sig.get("macro_invalidation", ""),
+            "tactical_bias": sig.get("tactical_bias", "NEUTRAL"),
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+    save_market_state(market_state)
 
     # 2. 写每日文件（每个品种）
     for r in results:

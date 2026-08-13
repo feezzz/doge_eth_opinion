@@ -5,6 +5,8 @@ autopilot/.env
 # 运行时日志
 autopilot/*.log
 autopilot/feishu_msg.txt
+# 运行时大周期状态（每5分钟更新，不入库）
+autopilot/market_state.json
 # Python
 __pycache__/
 *.pyc

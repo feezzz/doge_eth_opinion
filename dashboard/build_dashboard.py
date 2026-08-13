@@ -3,7 +3,7 @@ import json, os, re, glob
 from datetime import datetime
 
 ANALYSIS_DIR = r"D:\code\doge\doge_eth_opinion\analysis"
-POSITIONS_FILE = r"C:\Users\rl109\.claude\doge_positions.json"
+POSITIONS_FILE = r"D:\code\doge\doge_eth_opinion\autopilot\positions.json"
 OUTPUT = os.path.join(os.path.dirname(__file__), "data.js")
 
 def parse_log_file(filepath):
@@ -13,7 +13,7 @@ def parse_log_file(filepath):
         lines = f.readlines()
 
     pending = {"group": "", "symbol": "ETHUSDT", "summary": "", "body_lines": [],
-               "ts": "", "period": "", "data_range": {}}
+               "ts": "", "period": "", "data_range": {}, "signal": None}
     body_started = False
 
     def flush():
@@ -36,11 +36,13 @@ def parse_log_file(filepath):
             "summary": pending["summary"],
             "body": body,
             "data_range": dict(pending["data_range"]),
+            "signal": pending.get("signal"),
             "placeholder": "自动分析" in body[:20],
         })
         pending["body_lines"] = []
         pending["summary"] = ""
         pending["data_range"] = {}
+        pending["signal"] = None
         body_started = False
 
     is_old_format = True  # 08-07~09: no ## headers
@@ -97,6 +99,15 @@ def parse_log_file(filepath):
                 pending["ts"] = m_vold.group(1)
                 body_started = True
                 continue
+            continue
+
+        # V6 结构化交易信号（Markdown HTML 注释，GitHub 页面不可见）
+        if line.startswith("<!--SIGNAL ") and line.endswith("-->"):
+            raw_signal = line[len("<!--SIGNAL "):-3].strip()
+            try:
+                pending["signal"] = json.loads(raw_signal)
+            except Exception:
+                pending["signal"] = None
             continue
 
         # 数据范围:

@@ -2,5 +2,8 @@
   "entries": [],
   "stop_loss": null,
   "targets": [],
-  "history": []
+  "history": [
+    {"entry": 1907, "targets": [1917.89, 1920.92, 1927.19], "exit": 1937, "pnl": "+30", "date": "2026-08-07"},
+    {"entry": 1910, "half_exit": 1927, "half_exit2": 1928, "pnl": "+17.5", "date": "2026-08-10"}
+  ]
 }

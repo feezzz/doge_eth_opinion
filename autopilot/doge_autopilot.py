@@ -82,8 +82,23 @@ SYSTEM_PROMPT = """你是"狗哥(doge)"，加密货币交易员，主做ETH日�
 - 盯死关键位，位置不到不动手
 
 ## 输出格式
-只输出分析正文，2-5句话。不要输出标题（###），不要用代码块。
+先输出分析正文，2-5句话。不要输出标题（###），不要用代码块。
 正文直接以行情描述开头。不输出"兄弟们"等直播开场白。
+
+正文后必须另起一行输出一条机器信号，格式严格为：
+[[SIGNAL]]{"action":"WAIT","bias":"NEUTRAL","trial_zone":null,"trigger":"","confirm_price":null,"stop":null,"targets":[],"invalidation":"","allow_chase":false,"evidence":{"location":"UNKNOWN","resonance":"UNKNOWN","turnover":"UNKNOWN","room":"UNKNOWN"}}
+
+字段约束：
+- action 只能是 TRY_LONG / TRY_SHORT / PREPARE_LONG / PREPARE_SHORT / WAIT / NO_TRADE
+- bias 只能是 LONG / SHORT / NEUTRAL
+- trial_zone 只有在正文明确给出可试仓/可接/可空的价格或区间时填写 [低,高]，否则 null
+- confirm_price 只有在正文明确给出确认价位时填写，否则 null
+- stop、targets 只允许使用正文明确提到且来自输入K线/关键位的数据；没有就 null / []，绝不编造
+- allow_chase 默认 false，只有正文明确允许追单才可 true
+- evidence 四项没有依据就 UNKNOWN，不要为了填满而猜
+- TRY_LONG / TRY_SHORT 只在当前最新价格已经进入或非常接近明确试仓区、且正文允许轻仓尝试时使用；价格尚未到计划区域时必须用 PREPARE_LONG / PREPARE_SHORT
+- 如果只是“等确认、等回踩、位置不到”，有明确方向时用 PREPARE_LONG / PREPARE_SHORT，否则 WAIT；不要把所有情况都写成 NO_TRADE
+- 机器信号不要解释，不要加 Markdown，不要再输出其他内容。
 """
 
 # ── 函数 ────────────────────────────────────────────
@@ -142,7 +157,7 @@ def call_deepseek(kline_data, symbol, scope, period):
 K线数据:
 {kline_data}
 
-请按狗哥风格分析以上K线数据，2-5句话。"""
+请按狗哥风格分析以上K线数据，2-5句话，并按系统要求在最后输出 [[SIGNAL]] JSON。"""
 
     req_data = {
         "model": DEEPSEEK_MODEL,
@@ -178,6 +193,78 @@ def clean_analysis(analysis):
     return analysis.strip()
 
 
+
+def normalize_signal(signal):
+    """规范化 DeepSeek 的机器信号；缺失/异常字段安全回退。"""
+    if not isinstance(signal, dict):
+        signal = {}
+    actions = {"TRY_LONG", "TRY_SHORT", "PREPARE_LONG", "PREPARE_SHORT", "WAIT", "NO_TRADE"}
+    biases = {"LONG", "SHORT", "NEUTRAL"}
+    out = {
+        "action": signal.get("action") if signal.get("action") in actions else "WAIT",
+        "bias": signal.get("bias") if signal.get("bias") in biases else "NEUTRAL",
+        "trial_zone": None,
+        "trigger": str(signal.get("trigger") or "")[:180],
+        "confirm_price": None,
+        "stop": None,
+        "targets": [],
+        "invalidation": str(signal.get("invalidation") or "")[:180],
+        "allow_chase": bool(signal.get("allow_chase", False)),
+        "evidence": {},
+    }
+    zone = signal.get("trial_zone")
+    if isinstance(zone, (list, tuple)) and len(zone) == 2:
+        try:
+            lo, hi = float(zone[0]), float(zone[1])
+            if lo > 0 and hi > 0:
+                out["trial_zone"] = [min(lo, hi), max(lo, hi)]
+        except Exception:
+            pass
+    for k in ("confirm_price", "stop"):
+        try:
+            v = signal.get(k)
+            if v is not None and float(v) > 0:
+                out[k] = float(v)
+        except Exception:
+            pass
+    targets = signal.get("targets")
+    if isinstance(targets, list):
+        for v in targets[:3]:
+            try:
+                fv = float(v)
+                if fv > 0:
+                    out["targets"].append(fv)
+            except Exception:
+                pass
+    allowed_evidence = {"GOOD", "OK", "BAD", "YES", "PARTIAL", "NO", "UNKNOWN"}
+    ev = signal.get("evidence") if isinstance(signal.get("evidence"), dict) else {}
+    for k in ("location", "resonance", "turnover", "room"):
+        v = str(ev.get(k, "UNKNOWN")).upper()
+        out["evidence"][k] = v if v in allowed_evidence else "UNKNOWN"
+    return out
+
+
+def split_analysis_signal(raw):
+    """从模型输出末尾提取 [[SIGNAL]] JSON，返回(正文, signal)。"""
+    raw = (raw or "").strip()
+    marker = "[[SIGNAL]]"
+    idx = raw.rfind(marker)
+    if idx < 0:
+        return clean_analysis(raw), normalize_signal({})
+    body = clean_analysis(raw[:idx].strip())
+    payload = raw[idx + len(marker):].strip()
+    payload = re.sub(r'^```(?:json)?\s*|\s*```$', '', payload, flags=re.I | re.S).strip()
+    try:
+        signal = json.loads(payload)
+    except Exception:
+        m = re.search(r'\{.*\}', payload, flags=re.S)
+        try:
+            signal = json.loads(m.group(0)) if m else {}
+        except Exception:
+            signal = {}
+    return body, normalize_signal(signal)
+
+
 def process_symbol(symbol):
     """处理单个品种：取K线 → 分析，返回结果字典。"""
     log(f"[autopilot] [{symbol}] 开始...")
@@ -191,11 +278,11 @@ def process_symbol(symbol):
     period, actual = parse_period_actual(stdout)
     scope = parse_scope(stderr)
 
-    analysis = call_deepseek(stdout, symbol, scope, period)
+    raw = call_deepseek(stdout, symbol, scope, period)
+    analysis, signal = split_analysis_signal(raw)
     if not analysis:
         analysis = f"自动分析: {symbol} 周期 {period}, 详见K线数据。"
-
-    analysis = clean_analysis(analysis)
+        signal = normalize_signal({})
 
     elapsed = time.time() - t0
     log(f"[autopilot] [{symbol}] 完成 ({elapsed:.0f}s)")
@@ -203,6 +290,7 @@ def process_symbol(symbol):
     return {
         "symbol": symbol,
         "analysis": analysis,
+        "signal": signal,
         "period": period,
         "actual": actual,
         "scope": scope,
@@ -210,7 +298,7 @@ def process_symbol(symbol):
     }
 
 
-def write_daily_files(symbol, analysis, period, actual, scope):
+def write_daily_files(symbol, analysis, signal, period, actual, scope):
     """写入单个品种的每日日志（data/ + analysis/）。"""
     now = datetime.now()
     today = now.strftime("%Y-%m-%d")
@@ -220,9 +308,10 @@ def write_daily_files(symbol, analysis, period, actual, scope):
         header += f" | 周期 {period}"
     header += "（北京）"
     scope_line = f"\n\n数据范围: {scope}" if scope else ""
+    signal_line = "\n\n<!--SIGNAL " + json.dumps(signal or normalize_signal({}), ensure_ascii=False, separators=(",", ":")) + "-->"
 
     summary = analysis.split("。")[0] + "。" if "。" in analysis else analysis[:80]
-    daily_entry = f"\n\n## {now.strftime('%H:%M')} — {symbol}\n\n**摘要:** {summary}\n\n{header}{scope_line}\n\n{analysis}"
+    daily_entry = f"\n\n## {now.strftime('%H:%M')} — {symbol}\n\n**摘要:** {summary}\n\n{header}{scope_line}{signal_line}\n\n{analysis}"
 
     for d in [DATA_DIR, ANALYSIS_DIR]:
         os.makedirs(d, exist_ok=True)
@@ -266,7 +355,7 @@ def git_push():
     try:
         today = datetime.now().strftime("%Y-%m-%d")
         daily_file = f"analysis/{today}.md"
-        subprocess.run(["git", "-C", GIT_REPO, "add", daily_file],
+        subprocess.run(["git", "-C", GIT_REPO, "add", daily_file, "dashboard/data.js", "dashboard/index.html"],
                        capture_output=True, timeout=15)
         subprocess.run(["git", "-C", GIT_REPO, "commit", "-m", f"{today} 狗哥多品种分析"],
                        capture_output=True, timeout=15)
@@ -315,7 +404,7 @@ def main():
 
     # 2. 写每日文件（每个品种）
     for r in results:
-        write_daily_files(r["symbol"], r["analysis"], r["period"], r["actual"], r["scope"])
+        write_daily_files(r["symbol"], r["analysis"], r.get("signal"), r["period"], r["actual"], r["scope"])
 
     # 3. 读持仓 + 组装飞书消息
     positions = load_positions()
@@ -324,18 +413,18 @@ def main():
     with open(MSG_PATH, "w", encoding="utf-8") as f:
         f.write(feishu_msg)
 
-    # 4. Git push
-    git_push()
-
-    # 5. 飞书
-    send_feishu()
-
-    # 6. 刷新仪表盘数据
+    # 4. 刷新仪表盘数据（先生成，再一起 Git push）
     try:
         subprocess.run(["python", str(PROJECT_ROOT / "dashboard" / "build_dashboard.py")],
                        timeout=30, capture_output=True)
     except Exception as e:
         log(f"[autopilot] dashboard 刷新失败: {e}")
+
+    # 5. Git push（分析 + data.js + index.html）
+    git_push()
+
+    # 6. 飞书
+    send_feishu()
 
     # 打印分析摘要
     log("[autopilot] === 分析摘要 ===")

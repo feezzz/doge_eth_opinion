@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>狗哥行情决策看板 V5.1 · 关键位优先版</title>
+<title>狗哥行情决策看板 V6 · 信号生命周期版</title>
 <style>
 :root{
   --bg:#090c10;--panel:#0f141a;--panel2:#121820;--line:#202833;--line2:#293442;
@@ -222,7 +222,7 @@ body{font-size:15px;line-height:1.58}
 
 
 
-/* ===== V5.2 试仓机会版：降低噪音，把价格层级放到第一视觉中心 ===== */
+/* ===== V6 信号生命周期版：降低噪音，把价格层级放到第一视觉中心 ===== */
 .quick-command{padding:18px 20px 20px;background:linear-gradient(145deg,#14170f 0%,#10161c 55%,#0d1319 100%);border-color:#34301d}
 .quick-command:after{opacity:.55}
 .quick-head{padding-bottom:4px}
@@ -267,7 +267,7 @@ body{font-size:15px;line-height:1.58}
 @media(max-width:560px){.compact-radar{grid-template-columns:1fr}.level{grid-template-columns:70px 92px minmax(0,1fr)}.level.focus-level .price{font-size:20px}}
 
 
-/* ===== V5.2 试仓机会版：把“能不能试”放在等待之前 ===== */
+/* ===== V6 信号生命周期版：把“能不能试”放在等待之前 ===== */
 .execution-opportunity{margin:0 0 16px;border:1px solid #3d4650;border-radius:15px;background:linear-gradient(135deg,#10161c,#0c1218);box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:minmax(280px,.78fr) minmax(0,1.55fr)}
 .exec-status{padding:17px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;position:relative}
 .exec-status:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#7b8794}
@@ -284,12 +284,23 @@ body{font-size:15px;line-height:1.58}
 @media(max-width:1050px){.exec-grid{grid-template-columns:1fr 1fr}.exec-cell{border-bottom:1px solid #1b242d}.exec-cell:nth-child(2n){border-right:0}.exec-cell:last-child{grid-column:1/-1;border-bottom:0}}
 @media(max-width:620px){.exec-grid{grid-template-columns:1fr}.exec-cell,.exec-cell:nth-child(n){border-right:0;border-bottom:1px solid #1b242d}.exec-cell:last-child{grid-column:auto;border-bottom:0}.exec-status strong{font-size:21px}.execution-opportunity.active .exec-status strong{font-size:23px}}
 
+
+/* ===== V6 信号生命周期：结构化信号 + 试仓/确认分层 ===== */
+.lifecycle-panel{margin:0 0 16px;padding:15px 17px;border:1px solid #26313d;border-radius:14px;background:linear-gradient(180deg,#10161c,#0d1319);box-shadow:var(--shadow)}
+.lifecycle-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.lifecycle-head h2{font-size:14px}.lifecycle-head p{font-size:10px;color:var(--dim);margin-top:3px}.signal-source{font-size:10px;padding:5px 8px;border-radius:999px;border:1px solid #294052;background:#0c151d;color:#7fb9e7}.signal-source.legacy{border-color:#413719;background:#181508;color:#c5aa4d}
+.lifecycle-track{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;position:relative}.life-step{padding:9px 8px;border:1px solid #202a34;border-radius:9px;background:#0b1015;text-align:center;color:#667482;position:relative}.life-step b{display:block;font-size:10px;margin-bottom:3px}.life-step span{font-size:9px}.life-step.done{border-color:#28513d;background:#0b1711;color:#79c99d}.life-step.active{border-color:#6a5616;background:#1a1608;color:#f0c94d;box-shadow:0 0 0 1px rgba(240,185,11,.08)}.life-step.active.long{border-color:#286244;background:#0c1b13;color:#63dda0}.life-step.active.short{border-color:#713338;background:#211012;color:#ff8188}.life-step.terminal{border-color:#633037;background:#1e0f11;color:#ee868c}
+.signal-control-grid{display:grid;grid-template-columns:1.2fr 1.2fr .8fr 1fr;gap:8px;margin-top:10px}.signal-control{padding:10px 11px;border:1px solid #202a34;border-radius:9px;background:#0b1015;min-height:68px}.signal-control b{display:block;font-size:9px;color:var(--dim);margin-bottom:5px}.signal-control strong{display:block;font-size:12px;line-height:1.45;color:#d1d9e1}.signal-control span{display:block;font-size:9px;color:#657382;margin-top:4px;line-height:1.4}.signal-control.trial strong{color:#70dda0}.signal-control.confirm strong{color:#76baff}.signal-control.chase strong.no{color:#e7c44d}.signal-control.chase strong.yes{color:#70dda0}
+.evidence-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.evidence-chip{display:flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid #202a34;border-radius:999px;background:#0a0f14;font-size:9px;color:#7d8a97}.evidence-chip i{width:7px;height:7px;border-radius:50%;background:#4b5865}.evidence-chip.good i{background:var(--green)}.evidence-chip.ok i{background:var(--gold)}.evidence-chip.bad i{background:var(--red)}
+.life-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:9px;color:#6e7b88}.life-stats span{padding:4px 7px;border-radius:6px;background:#0a0f14;border:1px solid #1d2630}.life-stats strong{color:#aeb9c4;font-family:Consolas,monospace}
+@media(max-width:1100px){.lifecycle-track{grid-template-columns:repeat(3,1fr)}.signal-control-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.lifecycle-track{grid-template-columns:1fr 1fr}.signal-control-grid{grid-template-columns:1fr}.lifecycle-head{align-items:flex-start;flex-direction:column}}
+
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V5.2 试仓机会版</small></div></div>
+    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + TRADFI PERPS · V6 信号生命周期版</small></div></div>
     <div class="live-strip"><span class="live-dot"></span><span class="live-symbol" id="liveSymbol">ETH · ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
     <div class="top-meta"><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
   </header>
@@ -297,7 +308,7 @@ body{font-size:15px;line-height:1.58}
     <aside class="sidebar">
       <div class="side-title">日期</div><ul class="date-list" id="dateList"></ul>
       <div class="side-title">品种</div><div class="sym-filters" id="symFilters"></div>
-      <div class="side-note">第一屏先看：<br><b style="color:#f5d86e">当前有没有试仓机会</b><br><b style="color:#7de2a5">试仓区在哪里</b><br><b style="color:#e7c44d">到位要满足什么条件</b><br><br>“等待”只代表还没到位；一旦进入明确试仓区，看板会直接提示。</div>
+      <div class="side-note">第一屏只看四件事：<br><b style="color:#f5d86e">信号走到哪一步</b><br><b style="color:#7de2a5">试仓能不能做</b><br><b style="color:#73b7ff">确认入场是否触发</b><br><b style="color:#e88b8b">是否已经错过 / 失效</b><br><br>新分析优先读取结构化信号；旧记录继续兼容文字识别。</div>
     </aside>
     <main class="main">
       <section class="quick-command" id="quickCommand">
@@ -344,7 +355,26 @@ body{font-size:15px;line-height:1.58}
           <div class="exec-cell"><b>第一目标</b><strong id="execTarget">--</strong><span id="execRRHint">--</span></div>
         </div>
       </section>
-      <div class="no-trade-banner" id="noTradeBanner">当前没有明确试仓机会；若分析给出了试仓区，会优先显示“等待到位”，而不是泛化成等待信号。</div>
+      <section class="lifecycle-panel" id="lifecyclePanel">
+        <div class="lifecycle-head"><div><h2>信号生命周期</h2><p>同一条机会从等待到执行，再到失效 / 错过；试仓与确认入场分开判断。</p></div><span class="signal-source legacy" id="signalSource">兼容识别</span></div>
+        <div class="lifecycle-track" id="lifecycleTrack">
+          <div class="life-step" data-life="waiting"><b>1 等待</b><span>位置未到</span></div>
+          <div class="life-step" data-life="near"><b>2 接近</b><span>准备盯盘</span></div>
+          <div class="life-step" data-life="trial"><b>3 试仓</b><span>允许小仓试</span></div>
+          <div class="life-step" data-life="confirmed"><b>4 确认</b><span>结构完成</span></div>
+          <div class="life-step" data-life="triggered"><b>5 已触达</b><span>离区不追新仓</span></div>
+          <div class="life-step" data-life="finished"><b>6 结束</b><span>目标/失效/过期</span></div>
+        </div>
+        <div class="signal-control-grid">
+          <div class="signal-control trial"><b>试仓</b><strong id="trialControl">暂无明确试仓</strong><span id="trialControlSub">有明确试仓区时才启用</span></div>
+          <div class="signal-control confirm"><b>确认入场</b><strong id="confirmControl">等待确认条件</strong><span id="confirmControlSub">试仓和确认不是同一个动作</span></div>
+          <div class="signal-control chase"><b>追单</b><strong class="no" id="chaseControl">禁止</strong><span id="chaseControlSub">默认不追</span></div>
+          <div class="signal-control"><b>当前生命周期</b><strong id="lifeHeadline">等待</strong><span id="lifeReason">正在读取</span></div>
+        </div>
+        <div class="evidence-row" id="evidenceRow"></div>
+        <div class="life-stats" id="lifeStats"></div>
+      </section>
+      <div class="no-trade-banner" id="noTradeBanner">当前没有明确可执行机会；如果试仓区已经错过，看板会直接显示“已错过，不追”，不会继续把旧位置当成可进场。</div>
       <div class="hero-grid">
         <section class="panel decision">
           <div class="decision-head">
@@ -423,7 +453,7 @@ body{font-size:15px;line-height:1.58}
     </main>
   </div>
 </div>
-<script src="data.js?v=20260812180212"></script>
+<script src="data.js?v=20260813101653"></script>
 <script>
 (function(){
 'use strict';
@@ -499,23 +529,95 @@ function extractTradeSetup(text,price){
   if(price){if(price>=x.zone.lo&&price<=x.zone.hi){status='in-zone';distancePct=0}else{const edge=price<x.zone.lo?x.zone.lo:x.zone.hi;distancePct=Math.abs(edge-price)/price*100;status=distancePct<=.35?'near':'waiting'}}
   const st=extractStopTarget(text,x.dir,x.zone);return {...x,status,distancePct,...st};
 }
+
+function normalizeStructuredSignal(raw){
+  if(!raw||typeof raw!=='object')return null;
+  const action=String(raw.action||'').toUpperCase();if(!action)return null;
+  const zone=Array.isArray(raw.trial_zone)&&raw.trial_zone.length===2?normalizeZone(raw.trial_zone[0],raw.trial_zone[1]):null;
+  const targets=Array.isArray(raw.targets)?raw.targets.map(Number).filter(x=>Number.isFinite(x)&&x>0).slice(0,3):[];
+  const num=v=>{v=Number(v);return Number.isFinite(v)&&v>0?v:null};
+  return {action,bias:String(raw.bias||'NEUTRAL').toUpperCase(),zone,trigger:String(raw.trigger||''),confirmPrice:num(raw.confirm_price),invalid:num(raw.stop),targets,invalidation:String(raw.invalidation||''),allowChase:!!raw.allow_chase,evidence:raw.evidence&&typeof raw.evidence==='object'?raw.evidence:{}};
+}
+function setupFromEntry(e,text,price){
+  const s=normalizeStructuredSignal(e?.signal);
+  if(!s)return {...extractTradeSetup(text,price),structured:false,signal:null};
+  let dir=null;if(/LONG/.test(s.action))dir='long';else if(/SHORT/.test(s.action))dir='short';else if(s.bias==='LONG'&&/^PREPARE/.test(s.action))dir='long';else if(s.bias==='SHORT'&&/^PREPARE/.test(s.action))dir='short';
+  let status='none',distancePct=null;
+  if(s.zone&&price){if(price>=s.zone.lo&&price<=s.zone.hi){status='in-zone';distancePct=0}else{const edge=price<s.zone.lo?s.zone.lo:s.zone.hi;distancePct=Math.abs(edge-price)/price*100;status=distancePct<=.35?'near':'waiting'}}
+  else if(s.zone)status='waiting';
+  else if(/^TRY_/.test(s.action))status='in-zone';
+  else if(/^PREPARE_/.test(s.action))status='waiting';
+  const target=s.targets[0]||null;
+  return {dir,zone:s.zone,status,distancePct,condition:s.trigger||'按结构化信号条件执行',source:'结构化信号',context:'',score:4,invalid:s.invalid,target,targets:s.targets,structured:true,signal:s,confirmPrice:s.confirmPrice,allowChase:s.allowChase,invalidation:s.invalidation};
+}
+function signalKey(e,setup){const z=setup?.zone?`${setup.zone.lo}-${setup.zone.hi}`:'none';return `doge_v6:${curDate}:${e?.symbol||curSym}:${e?.ts||e?.period||'latest'}:${setup?.dir||'none'}:${z}`}
+function loadLifeRecord(key){try{return JSON.parse(localStorage.getItem(key)||'{}')}catch(e){return {}}}
+function saveLifeRecord(key,r){try{localStorage.setItem(key,JSON.stringify(r))}catch(e){}}
+function deriveLifecycle(e,setup,price){
+  const s=setup?.signal,action=s?.action||'';const key=signalKey(e,setup),rec=loadLifeRecord(key),now=Date.now();let state='waiting',reason='等待关键位置或确认条件';
+  const dir=setup?.dir,zone=setup?.zone,stop=setup?.invalid,confirm=setup?.confirmPrice,target=(setup?.targets||[])[0]||setup?.target||null;
+  const invalid=price&&dir&&stop&&((dir==='long'&&price<=stop)||(dir==='short'&&price>=stop));
+  const confirmed=price&&dir&&confirm&&((dir==='long'&&price>=confirm)||(dir==='short'&&price<=confirm));
+  const inZone=price&&zone&&price>=zone.lo&&price<=zone.hi;
+  const near=price&&zone&&!inZone&&(Math.min(Math.abs(price-zone.lo),Math.abs(price-zone.hi))/price*100<=.35);
+  if(inZone&&!rec.touchedAt){rec.touchedAt=now;rec.entryPrice=price}
+  if(confirmed&&!rec.confirmedAt)rec.confirmedAt=now;
+  if(invalid&&!rec.invalidAt)rec.invalidAt=now;
+  if(rec.touchedAt&&price&&rec.entryPrice&&dir){const fav=(dir==='long'?(price-rec.entryPrice):(rec.entryPrice-price))/rec.entryPrice*100,adv=-fav;rec.mfe=Math.max(Number(rec.mfe)||0,fav);rec.mae=Math.max(Number(rec.mae)||0,adv)}
+  if(target&&price&&dir&&((dir==='long'&&price>=target)||(dir==='short'&&price<=target))&&!rec.targetAt)rec.targetAt=now;
+  const fresh=typeof freshnessInfo==='function'?freshnessInfo(e):{cls:'live'};
+  if(rec.invalidAt){state='invalid';reason='价格已触及失效 / 止损条件'}
+  else if(rec.targetAt){state='target';reason='第一目标已经触及，进入持仓管理 / 分仓止盈'}
+  else if(fresh.cls==='stale'){state='expired';reason='最新观点已经过期，旧信号不再作为新开仓依据'}
+  else if(action==='NO_TRADE'){state='no-trade';reason='结构化信号明确要求不参与'}
+  else if(rec.confirmedAt){state='confirmed';reason='确认条件已经触发，进入确认型执行'}
+  else if(rec.touchedAt&&!inZone){state='triggered';reason='试仓区已经触达且当前已离开；如果当时没有执行，现在不追新仓'}
+  else if(inZone||(/^TRY_/.test(action)&&!zone)){state='trial';reason='试仓条件到位，可按规则小仓尝试'}
+  else if(near){state='near';reason='已接近试仓区，开始重点观察'}
+  else if(/^PREPARE_/.test(action)&&confirm){state='waiting';reason='方向明确，但确认价格尚未触发'}
+  else if(zone){state='waiting';reason='试仓位置明确，等待价格到位'}
+  else if(!dir){state='waiting';reason='当前没有明确可执行方向'}
+  saveLifeRecord(key,rec);return {state,reason,rec,key};
+}
+function evidenceClass(v){v=String(v||'UNKNOWN').toUpperCase();if(['GOOD','YES'].includes(v))return 'good';if(['OK','PARTIAL'].includes(v))return 'ok';if(['BAD','NO'].includes(v))return 'bad';return ''}
+function evidenceText(v){const m={GOOD:'优',YES:'已形成',OK:'一般',PARTIAL:'部分',BAD:'差',NO:'未形成',UNKNOWN:'未知'};return m[String(v||'UNKNOWN').toUpperCase()]||'未知'}
+function renderLifecycle(e,text,d){
+  const setup=d.setup||setupFromEntry(e,text,lastPrice),life=deriveLifecycle(e,setup,lastPrice),structured=!!setup.structured;
+  const src=$('signalSource');src.textContent=structured?'结构化信号':'兼容识别';src.className='signal-source'+(structured?'':' legacy');
+  const order=['waiting','near','trial','confirmed','triggered','finished'];let active='waiting',terminal=false;
+  if(life.state==='near')active='near';else if(life.state==='trial')active='trial';else if(life.state==='confirmed')active='confirmed';else if(life.state==='triggered')active='triggered';else if(['invalid','expired','target','no-trade'].includes(life.state)){active='finished';terminal=true}
+  const idx=order.indexOf(active);document.querySelectorAll('#lifecycleTrack .life-step').forEach((el,i)=>{el.className='life-step';if(i<idx)el.classList.add('done');if(i===idx){el.classList.add('active');if(setup.dir)el.classList.add(setup.dir);if(terminal)el.classList.add('terminal')}});
+  const labels={waiting:'等待到位',near:'接近机会区',trial:'试仓条件已到',confirmed:'确认入场已触发',triggered:'试仓已触发',invalid:'计划已失效',expired:'信号已过期',target:'目标已触及','no-trade':'明确不参与'};
+  $('lifeHeadline').textContent=labels[life.state]||life.state;$('lifeReason').textContent=life.reason;
+  if(setup.dir&&setup.zone){$('trialControl').textContent=`${setup.dir==='long'?'做多':'做空'} · ${zoneText(setup.zone)}`;$('trialControlSub').textContent=setup.status==='in-zone'?'当前位置已在试仓区':setup.status==='near'?'已经接近，准备盯盘':tradeSetupDistance(setup,lastPrice)}else{$('trialControl').textContent='暂无明确试仓';$('trialControlSub').textContent='没有明确试仓区时不强行给入场'}
+  const cp=setup.confirmPrice;$('confirmControl').textContent=cp?`${setup.dir==='short'?'跌破':'站上'} ${formatPrice(cp)}`:(setup.signal?.trigger||setup.condition||'等待确认条件');$('confirmControlSub').textContent=life.state==='confirmed'?'确认条件已经触发':'与试仓分开判断，未确认前不当成正式入场';
+  const chase=setup.allowChase===true;$('chaseControl').textContent=chase?'允许':'禁止';$('chaseControl').className=chase?'yes':'no';$('chaseControlSub').textContent=chase?'仅按最新结构化信号':'默认不追；错过试仓区就放弃追价';
+  const ev=setup.signal?.evidence||{};const items=[['位置',ev.location],['共振',ev.resonance],['换手',ev.turnover],['空间',ev.room]];$('evidenceRow').innerHTML=items.map(([k,v])=>`<span class="evidence-chip ${evidenceClass(v)}"><i></i>${k} · ${evidenceText(v)}</span>`).join('');
+  const stats=[];if(life.rec.touchedAt)stats.push(`试仓触达 <strong>${new Date(life.rec.touchedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(life.rec.confirmedAt)stats.push(`确认触发 <strong>${new Date(life.rec.confirmedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</strong>`);if(Number.isFinite(life.rec.mfe))stats.push(`触达后最大有利 <strong>${life.rec.mfe.toFixed(2)}%</strong>`);if(Number.isFinite(life.rec.mae))stats.push(`最大不利 <strong>${life.rec.mae.toFixed(2)}%</strong>`);$('lifeStats').innerHTML=stats.map(x=>`<span>${x}</span>`).join('');
+  return life;
+}
+
 function tradeSetupDistance(setup,price){if(!setup||!setup.zone||!price)return '--';if(price>=setup.zone.lo&&price<=setup.zone.hi)return '当前已进入试仓区';const edge=price<setup.zone.lo?setup.zone.lo:setup.zone.hi;return `距离试仓区 ${fmtDist(edge,price)}`}
 function setupAction(setup){if(!setup||!setup.dir)return {label:'暂无明确试仓',cls:'wait'};if(setup.status==='in-zone')return {label:setup.dir==='long'?'可尝试轻仓做多':'可尝试轻仓做空',cls:setup.dir==='long'?'try-long':'try-short'};if(setup.status==='near')return {label:setup.dir==='long'?'接近多头试仓区':'接近空头试仓区',cls:'near'};return {label:setup.dir==='long'?'等待到多头试仓区':'等待到空头试仓区',cls:'wait'}}
 function deriveDecision(e){
   if(!e)return {state:'暂无数据',cls:'state-neutral',bias:'结构判断 --',summary:'当前日期没有可读取的分析。',trigger:'--',watch:'--',avoid:'--',longScore:0};
   const t=(e.summary||'')+' '+(e.body||'');
-  const setup=extractTradeSetup(t,lastPrice);
+  const setup=setupFromEntry(e,t,lastPrice);
   const hardWait=/宁可空仓|位置不到不动手|中间位置不动手|中间不动手|不上不下.*不动手|没方向|等方向/.test(t);
   const softWait=/别急着动手|等.*确认|等回踩|等反抽|不追|别追/.test(t);
   const longScore=scoreKeywords(t,['偏多','多头结构','多头趋势','多头格局','多头控盘','重心上移','看多','试多','接多','做多','共振往上','多周期共振','同步转强','上涨中继','大阳','长阳','打穿','资金进场','继续看多'],['偏空','空头结构','空头格局','重心下移','做空','高空','短空']);
   let state,cls;
-  if(setup.status==='in-zone'&&setup.dir==='long'){state='试仓机会 · 做多';cls='state-long'}
+  const sa=setup.signal?.action||'';
+  if(sa==='NO_TRADE'){state='明确不参与';cls='state-neutral'}
+  else if(setup.status==='in-zone'&&setup.dir==='long'){state='试仓机会 · 做多';cls='state-long'}
   else if(setup.status==='in-zone'&&setup.dir==='short'){state='试仓机会 · 做空';cls='state-short'}
   else if(setup.status==='near'){state='接近试仓区';cls='state-wait'}
+  else if(/^PREPARE_LONG$/.test(sa)){state='准备做多 · 等确认';cls='state-long'}
+  else if(/^PREPARE_SHORT$/.test(sa)){state='准备做空 · 等确认';cls='state-short'}
   else if(setup.dir){state='等待到试仓区';cls='state-wait'}
   else if(hardWait||softWait){state='等待确认';cls='state-wait'}
   else if(longScore>=2){state='偏多执行';cls='state-long'} else if(longScore===1){state='偏多观察';cls='state-long'} else if(longScore<=-2){state='偏空执行';cls='state-short'} else if(longScore===-1){state='偏空观察';cls='state-short'} else {state='观望 / 对抗';cls='state-neutral'}
-  let bias=longScore>=1?'大结构偏多':longScore<=-1?'大结构偏空':'多空对抗';
+  let bias=setup.signal?.bias==='LONG'?'大结构偏多':setup.signal?.bias==='SHORT'?'大结构偏空':setup.signal?.bias==='NEUTRAL'?'多空对抗':longScore>=1?'大结构偏多':longScore<=-1?'大结构偏空':'多空对抗';
   const trigger=findSentence(t,['站稳','突破','破了','跌破','放量','回踩不破','收盘'], '等待关键位出现收盘确认');
   const watch=findSentence(t,['盯盘','盯死','关键位','支撑','压力','分水岭'], e.summary||compact(e.body,180));
   const avoid=findSentence(t,['不追','别追','不动手','宁可','别急','别手痒'], '位置不到不动手，不在区间中部赌方向');
@@ -568,7 +670,7 @@ function marketPhase(text,d){
   return {title:d.state,detail:'以最新观点的关键位和收盘确认作为下一步执行依据。'};
 }
 function currentAction(text,d){
-  const setup=d.setup||extractTradeSetup(text,lastPrice),sa=setupAction(setup);
+  const setup=d.setup||setupFromEntry(currentEntry,text,lastPrice),sa=setupAction(setup);
   if(setup.dir)return sa.label;
   if(/不动手|等方向|宁可空仓|别手痒|别急着动手|不上不下/.test(text))return '先不动手';
   if(d.cls==='state-long')return /不追|别追/.test(text)?'偏多，但只等回踩/确认':'偏多，顺势等入场条件';
@@ -626,7 +728,7 @@ function directionalPlan(text,dir){
   return dir==='long'?'关键压力收盘站稳后，再等回踩/换手确认，不追第一根。':'关键支撑收盘失守后，再等反抽不过/换手确认，不在支撑上追空。';
 }
 function formatPrice(v){if(v===null||v===undefined||!Number.isFinite(+v))return '--';return (+v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
-function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V5.2`}
+function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V6`}
 function nearestLevels(price,levels){
   if(!price||!levels.length)return {res:null,sup:null};
   const vals=levels.map(x=>x.v).filter(Number.isFinite);
@@ -664,10 +766,10 @@ function deriveStructuredPlan(text,d){
   planLevels={longTrigger:longTrig,shortTrigger:shortTrig,longInvalid,shortInvalid};
   return {longTrig,shortTrig,longTargets,shortTargets,longTriggerText,shortTriggerText,longEntry,shortEntry,longInvalid,shortInvalid,invalidText};
 }
-function actionClass(d,text){const setup=d.setup||extractTradeSetup(text,lastPrice);if(setup.status==='in-zone')return setup.dir==='long'?'try-long':'try-short';if(setup.status==='near')return 'near';if(d.cls==='state-long'&&!/不动手|等方向|宁可空仓/.test(text))return 'long';if(d.cls==='state-short'&&!/不动手|等方向|宁可空仓/.test(text))return 'short';return 'wait'}
+function actionClass(d,text){const setup=d.setup||setupFromEntry(currentEntry,text,lastPrice);if(setup.status==='in-zone')return setup.dir==='long'?'try-long':'try-short';if(setup.status==='near')return 'near';if(d.cls==='state-long'&&!/不动手|等方向|宁可空仓/.test(text))return 'long';if(d.cls==='state-short'&&!/不动手|等方向|宁可空仓/.test(text))return 'short';return 'wait'}
 function updateQuickBrief(text,d,plan,meta){
   const action=currentAction(text,d),ac=actionClass(d,text);$('quickSymbol').textContent=`${meta.name} · ${meta.code}`;$('quickVerdict').textContent=`${d.state}｜${d.bias}`;
-  const next=nextTaskInfo(text,d),setup=d.setup||extractTradeSetup(text,lastPrice);$('quickSentence').textContent=setup.dir?`${marketPhase(text,d).title}。明确${setup.dir==='long'?'多头':'空头'}试仓区 ${zoneText(setup.zone)}；${setup.condition}。`:`${marketPhase(text,d).title}。${next.focus||d.watch}；${next.gate||d.trigger}。`;
+  const next=nextTaskInfo(text,d),setup=d.setup||setupFromEntry(currentEntry,text,lastPrice);$('quickSentence').textContent=setup.dir?`${marketPhase(text,d).title}。明确${setup.dir==='long'?'多头':'空头'}试仓区 ${zoneText(setup.zone)}；${setup.condition}。`:`${marketPhase(text,d).title}。${next.focus||d.watch}；${next.gate||d.trigger}。`;
   $('quickAction').textContent=action;$('quickActionBox').className='quick-action '+ac;
   $('quickCurrentPrice').textContent=lastPrice?formatPrice(lastPrice):'--';$('quickPriceMode').textContent=isLatestDate()?'LIVE':'参考现价';
   $('quickLongTrigger').textContent=plan.longTrig?formatPrice(plan.longTrig):'待确认';$('quickLongDist').textContent=plan.longTrig&&lastPrice?fmtDist(plan.longTrig,lastPrice):'';
@@ -685,10 +787,10 @@ function updateQuickBrief(text,d,plan,meta){
 }
 
 function updateExecutionOpportunity(text,d,plan){
-  const setup=d.setup||extractTradeSetup(text,lastPrice),box=$('executionOpportunity');if(!box)return;
+  const setup=d.setup||setupFromEntry(currentEntry,text,lastPrice),box=$('executionOpportunity');if(!box)return;
   const sa=setupAction(setup);box.className='execution-opportunity '+(setup.status==='in-zone'?(setup.dir==='long'?'long active':'short active'):setup.status==='near'?'near':'wait');
   $('execHeadline').textContent=setup.dir?sa.label:'最新观点没有给出明确的试仓位置';
-  $('execReason').textContent=setup.dir?setup.source:'当前只提到观察/确认条件，没有“轻仓试多、尝试短空、回踩可接”等明确执行语句。';
+  $('execReason').textContent=setup.dir?(setup.structured?(setup.signal?.trigger||'结构化信号已给出可执行方向/位置'):setup.source):'当前没有明确可执行试仓位置；继续等待结构化信号或清晰的试仓语句。';
   $('execZone').textContent=setup.zone?zoneText(setup.zone):'--';$('execZoneDistance').textContent=setup.zone?tradeSetupDistance(setup,lastPrice):'--';
   $('execDirection').textContent=setup.dir==='long'?'做多':setup.dir==='short'?'做空':'--';$('execMode').textContent=setup.status==='in-zone'?'试仓条件已到位':setup.status==='near'?'非常接近，准备观察':'等待价格到位';
   $('execCondition').textContent=setup.condition||'--';
@@ -703,7 +805,7 @@ function updateBattlePlan(text,d,plan){
   $('longEntry').textContent=plan.longEntry;$('shortEntry').textContent=plan.shortEntry;
   $('longTarget1').textContent=fmt(plan.longTargets[0]);$('longTarget2').textContent=fmt(plan.longTargets[1]);$('shortTarget1').textContent=fmt(plan.shortTargets[0]);$('shortTarget2').textContent=fmt(plan.shortTargets[1]);
   $('longInvalid').textContent=plan.longInvalid?`${formatPrice(plan.longInvalid)} 下方结构破坏`:plan.invalidText;$('shortInvalid').textContent=plan.shortInvalid?`${formatPrice(plan.shortInvalid)} 上方重新转强`:plan.invalidText;
-  const setup=d.setup||extractTradeSetup(text,lastPrice);
+  const setup=d.setup||setupFromEntry(currentEntry,text,lastPrice);
   const longReady=setup.dir==='long'&&setup.status==='in-zone',shortReady=setup.dir==='short'&&setup.status==='in-zone';
   const longNear=setup.dir==='long'&&setup.status==='near',shortNear=setup.dir==='short'&&setup.status==='near';
   $('longPlanStatus').textContent=longReady?'试仓区已到':longNear?'接近试仓区':d.cls==='state-long'?'优先观察':'备选方案';$('longPlanStatus').className='plan-status'+(longReady?' ready-long':'');
@@ -732,7 +834,7 @@ function renderDecision(){
   const sym=curSym||'ETHUSDT',meta=symMeta(sym),e=latestEntry(curDate,sym);currentEntry=e;const d=deriveDecision(e);
   $('decisionState').textContent=d.state;$('decisionState').className='decision-state '+d.cls;$('biasBadge').textContent=d.bias;$('decisionSummary').textContent=d.summary;$('triggerRule').textContent=d.trigger;$('watchRule').textContent=d.watch;$('avoidRule').textContent=d.avoid;
   const text=(e?.summary||'')+' '+(e?.body||''); currentLevels=extractLevels(text);
-  const structuredPlan=deriveStructuredPlan(text,d);updateQuickBrief(text,d,structuredPlan,meta);updateExecutionOpportunity(text,d,structuredPlan);updateBattlePlan(text,d,structuredPlan);
+  const structuredPlan=deriveStructuredPlan(text,d);updateQuickBrief(text,d,structuredPlan,meta);updateExecutionOpportunity(text,d,structuredPlan);updateBattlePlan(text,d,structuredPlan);renderLifecycle(e,text,d);
   const score=executionScore(text,d);$('signalScore').textContent=score;$('signalGrade').textContent=score>=75?'高准备度 · 不是胜率':score>=55?'中等准备度 · 不是胜率':'低准备度 · 继续等';
   $('opinionTime').textContent=e?`${meta.name}观点 ${e.ts||e.period||'--'}`:`${meta.name}观点 --`;const f=freshnessInfo(e);$('freshness').textContent=f.label;$('freshness').className='meta-chip '+f.cls;
   const phase=marketPhase(text,d),next=nextTaskInfo(text,d);$('phaseTitle').textContent=phase.title;$('phaseDetail').textContent=phase.detail;$('nextTask').textContent=currentAction(text,d);$('nextDetail').textContent=next.focus||'等待关键位进一步明确';$('actionGate').textContent=next.gate||'等待收盘确认';$('actionGateDetail').textContent=(d.setup&&d.setup.dir)?'明确试仓区到位时允许按条件轻仓尝试；确认型机会仍需等结构完成。':'只有触发条件完成后才执行，不提前猜方向';$('invalidPlan').textContent='原计划失效条件';$('invalidDetail').textContent=invalidationInfo(text,d);
@@ -754,11 +856,11 @@ function renderDecision(){
     ['当前可执行性',d.setup?.status==='in-zone'||!(/不动手|等方向|宁可空仓|别手痒/.test(text)),d.setup?.status==='in-zone'?'ok':waitClass(text)]
   ];
   $('checks').innerHTML=checks.map(x=>`<div class="check ${x[2]}"><i></i><span>${x[0]}</span><b>${x[2]==='ok'?'通过':x[2]==='bad'?'不通过':'等待'}</b></div>`).join('');
-  $('rawLatest').innerHTML=e?`<div class="panel" style="padding:16px"><div class="section-label"><h2>${esc(meta.name)} · ${esc(sym)} · ${esc(e.ts)} · 周期 ${esc(e.period)}</h2><span class="sub">原始最新观点</span></div><div style="white-space:pre-line;line-height:1.85;color:#aab6c2;font-size:12px">${esc(e.body)}</div></div>`:'<div class="empty">无最新观点</div>';
+  $('rawLatest').innerHTML=e?`<div class="panel" style="padding:16px"><div class="section-label"><h2>${esc(meta.name)} · ${esc(sym)} · ${esc(e.ts)} · 周期 ${esc(e.period)}</h2><span class="sub">原始最新观点${e.signal?' · 含结构化信号':''}</span></div><div style="white-space:pre-line;line-height:1.85;color:#aab6c2;font-size:12px">${esc(e.body)}</div>${e.signal?`<div style="margin-top:12px;padding:10px;border:1px solid #203041;border-radius:8px;background:#0a1118;color:#7faed2;font:11px/1.7 Consolas,monospace">SIGNAL · ${esc(e.signal.action||'WAIT')} · ${esc(e.signal.bias||'NEUTRAL')}</div>`:''}</div>`:'<div class="empty">无最新观点</div>';
   updateInstrumentUI();updateDistanceStrip();if(chartData.length)drawChart();
 }
 function waitClass(t){return /不动手|等方向|宁可空仓|别手痒|不上不下/.test(t)?'bad':(/等|确认/.test(t)?'warn':'ok')}
-function renderTimeline(){const list=allEntries(curDate,curSym||'ETHUSDT').slice(-8).reverse();$('timeline').innerHTML=list.length?list.map(e=>{const d=deriveDecision(e);const tc=d.cls.includes('long')?'long':d.cls.includes('short')?'short':d.cls.includes('wait')?'wait':'';return `<div class="tl ${tc}"><div class="time">${esc(e.ts||e.period)}</div><div class="tl-state ${d.cls.replace('state-','')==='long'?'up':d.cls.replace('state-','')==='short'?'down':''}">${esc(d.state)} · ${esc(d.bias)}</div><p title="${esc(e.summary||e.body||'')}">${esc(e.summary||compact(e.body,200))}</p></div>`}).join(''):'<div class="empty">暂无结构变化</div>'}
+function renderTimeline(){const list=allEntries(curDate,curSym||'ETHUSDT').slice(-8).reverse();$('timeline').innerHTML=list.length?list.map(e=>{const d=deriveDecision(e);const tc=d.cls.includes('long')?'long':d.cls.includes('short')?'short':d.cls.includes('wait')?'wait':'';return `<div class="tl ${tc}"><div class="time">${esc(e.ts||e.period)}</div><div class="tl-state ${d.cls.replace('state-','')==='long'?'up':d.cls.replace('state-','')==='short'?'down':''}">${esc(d.state)} · ${esc(d.bias)}${e.signal?' · 结构化':''}</div><p title="${esc(e.summary||e.body||'')}">${esc(e.summary||compact(e.body,200))}</p></div>`}).join(''):'<div class="empty">暂无结构变化</div>'}
 function selectSymbol(s){if(!s||s===curSym)return;curSym=s;lastPrice=null;chartData=[];currentLevels=[];renderAll();loadTicker();loadChart()}
 function renderRadar(){renderOpportunityRadar()}
 function renderSidebar(){const ul=$('dateList');ul.innerHTML='';DATES.forEach(d=>{const day=DATA.days[d];const li=document.createElement('li');li.className=d===curDate?'active':'';li.innerHTML=`<span>${d.slice(5)}</span><span class="cnt">${day.type==='log'?day.entries.length:'doc'}</span>`;li.onclick=()=>{curDate=d;renderAll();loadChart()};ul.appendChild(li)});const div=$('symFilters');div.innerHTML='';const order=['ETHUSDT','SNDKUSDT','SKHYUSDT','MUUSDT'].filter(s=>(DATA.meta.symbols||[]).includes(s));const rest=(DATA.meta.symbols||[]).filter(s=>!order.includes(s));order.concat(rest).forEach(s=>{const m=symMeta(s),b=document.createElement('button');b.className='sym-chip '+(s===curSym?'active':'');b.innerHTML=`<strong>${esc(m.name)}</strong><small>${esc(m.code)} · ${esc(m.kind)}</small>`;b.onclick=()=>selectSymbol(s);div.appendChild(b)})}
@@ -799,7 +901,7 @@ function drawChart(){
   visibleLevels.forEach(l=>{const yy=y(l.v),col=l.type==='res'?'#ff5d5d':l.type==='sup'?'#2ecc71':'#f0b90b';ctx.save();ctx.setLineDash([4,4]);ctx.globalAlpha=.72;ctx.strokeStyle=col;ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;ctx.fillStyle=col;ctx.font='8px Consolas';ctx.fillText(`${l.kind} ${l.v.toFixed(1)}`,pad.l+4,Math.max(9,yy-3));ctx.restore()});
   const special=[['多头触发',planLevels.longTrigger,'#2ecc71'],['空头触发',planLevels.shortTrigger,'#ff5d5d']].filter(x=>x[1]&&x[1]>=lo&&x[1]<=hi);
   special.forEach(([lab,v,col])=>{const yy=y(v);ctx.save();ctx.setLineDash([8,4]);ctx.globalAlpha=.9;ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=col;ctx.font='bold 9px Consolas';ctx.fillText(`${lab} ${v.toFixed(2)}`,Math.max(pad.l+6,W-pad.r-132),Math.max(10,yy-4));ctx.restore()});
-  const currentText=(currentEntry?.summary||'')+' '+(currentEntry?.body||''),setup=extractTradeSetup(currentText,lastPrice);
+  const currentText=(currentEntry?.summary||'')+' '+(currentEntry?.body||''),setup=setupFromEntry(currentEntry,currentText,lastPrice);
   if(setup.zone){const zlo=setup.zone.lo,zhi=setup.zone.hi;if(zhi>=lo&&zlo<=hi){ctx.save();const col=setup.dir==='long'?'#45d98a':'#ff6f76',top=y(Math.min(hi,zhi)),bottom=y(Math.max(lo,zlo));ctx.globalAlpha=.09;ctx.fillStyle=col;ctx.fillRect(pad.l,Math.min(top,bottom),W-pad.l-pad.r,Math.max(2,Math.abs(bottom-top)));ctx.globalAlpha=.95;ctx.strokeStyle=col;ctx.setLineDash([3,3]);[zlo,zhi].forEach(v=>{if(v<lo||v>hi)return;const yy=y(v);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke()});ctx.setLineDash([]);ctx.fillStyle=col;ctx.font='bold 9px Consolas';ctx.fillText(`${setup.dir==='long'?'多头':'空头'}试仓区 ${zoneText(setup.zone)}`,pad.l+6,Math.max(11,Math.min(top,bottom)-4));ctx.restore()}}
   const last=chartData[chartData.length-1];ctx.setLineDash([3,3]);ctx.strokeStyle='#d2b24b';ctx.beginPath();ctx.moveTo(pad.l,y(last.c));ctx.lineTo(W-pad.r,y(last.c));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#e8c85c';ctx.fillText(last.c.toFixed(2),W-pad.r+5,y(last.c)+3);
   ctx.fillStyle='#4c5966';ctx.font='8px Consolas';const firstT=new Date(chartData[0].t),lastT=new Date(chartData[chartData.length-1].t);const fmt=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;ctx.fillText(fmt(firstT),pad.l,H-3);ctx.fillText(fmt(lastT),Math.max(pad.l,W-pad.r-28),H-3);

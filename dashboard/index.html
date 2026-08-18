@@ -480,7 +480,7 @@ body{font-size:15px;line-height:1.58}
     </main>
   </div>
 </div>
-<script id="appDataScript" src="data.js?v=20260818114525"></script>
+<script id="appDataScript" src="data.js?v=20260818120024"></script>
 <script>
 (function(){
 'use strict';
@@ -594,9 +594,9 @@ function setupFromEntry(e,text,price){
   if(!dir&&!s.zone&&s.action==='WAIT'){
     const inherited=recentStructuredPlanFallback(e,s,price);if(inherited)return inherited;
   }
-  let status='none',distancePct=null;
-  if(s.zone&&price){if(price>=s.zone.lo&&price<=s.zone.hi){status='in-zone';distancePct=0}else{const edge=price<s.zone.lo?s.zone.lo:s.zone.hi;distancePct=Math.abs(edge-price)/price*100;status=distancePct<=.35?'near':'waiting'}}
-  else if(s.zone)status='waiting';
+  let status=/^CONFIRM_/.test(s.action)?'confirmed':'none',distancePct=null;
+  if(status!=='confirmed'&&s.zone&&price){if(price>=s.zone.lo&&price<=s.zone.hi){status='in-zone';distancePct=0}else{const edge=price<s.zone.lo?s.zone.lo:s.zone.hi;distancePct=Math.abs(edge-price)/price*100;status=distancePct<=.35?'near':'waiting'}}
+  else if(status!=='confirmed'&&s.zone)status='waiting';
   else if(/^TRY_/.test(s.action))status='in-zone';
   else if(/^PREPARE_/.test(s.action))status='waiting';
   const target=s.targets[0]||null;
@@ -684,14 +684,18 @@ function deriveLifecycle(e,setup,price){
   const s=setup?.signal,action=s?.action||'',chain=resolveSignalChain(e,setup),key=chain.key,rec=loadLifeRecord(key),now=Date.now();let state='waiting',reason='等待关键位置或确认条件';
   const dir=setup?.dir,zone=setup?.zone,stop=setup?.invalid,confirm=setup?.confirmPrice,target=(setup?.targets||[])[0]||setup?.target||null;
   const invalid=price&&dir&&stop&&((dir==='long'&&price<=stop)||(dir==='short'&&price>=stop));
-  const confirmed=price&&dir&&confirm&&((dir==='long'&&price>=confirm)||(dir==='short'&&price<=confirm));
+  const confirmAction=/^CONFIRM_(LONG|SHORT)$/.test(action);
+  const pricePastConfirm=price&&dir&&confirm&&((dir==='long'&&price>=confirm)||(dir==='short'&&price<=confirm));
   const inZone=price&&zone&&price>=zone.lo&&price<=zone.hi;
   const near=price&&zone&&!inZone&&(Math.min(Math.abs(price-zone.lo),Math.abs(price-zone.hi))/price*100<=.35);
+  // 确认修复：旧页面曾把实时价越过 confirm_price 直接记为确认。确认必须来自新一轮结构化收盘信号。
+  if(rec.confirmedAt&&!rec.confirmedBy){delete rec.confirmedAt}
+  if(rec.targetAt&&!rec.touchedAt&&!rec.confirmedAt&&!rec.targetBy){delete rec.targetAt}
   if(inZone&&!rec.touchedAt){rec.touchedAt=now;rec.entryPrice=price}
-  if(confirmed&&!rec.confirmedAt)rec.confirmedAt=now;
+  if(confirmAction&&!rec.confirmedAt){rec.confirmedAt=now;rec.confirmedBy='structured-close'}
   if(invalid&&!rec.invalidAt)rec.invalidAt=now;
   if(rec.touchedAt&&price&&rec.entryPrice&&dir){const fav=(dir==='long'?(price-rec.entryPrice):(rec.entryPrice-price))/rec.entryPrice*100,adv=-fav;rec.mfe=Math.max(Number(rec.mfe)||0,fav);rec.mae=Math.max(Number(rec.mae)||0,adv)}
-  if(target&&price&&dir&&((dir==='long'&&price>=target)||(dir==='short'&&price<=target))&&!rec.targetAt)rec.targetAt=now;
+  if((rec.touchedAt||rec.confirmedAt)&&target&&price&&dir&&((dir==='long'&&price>=target)||(dir==='short'&&price<=target))&&!rec.targetAt){rec.targetAt=now;rec.targetBy='active-plan'}
   const fresh=typeof freshnessInfo==='function'?freshnessInfo(e):{cls:'live'};
   if(rec.cancelledAt){state='cancelled';reason=rec.cancelReason||'最新分析已明确取消上一轮计划'}
   else if(rec.invalidAt){state='invalid';reason='价格已触及失效 / 止损条件'}
@@ -702,7 +706,8 @@ function deriveLifecycle(e,setup,price){
   else if(rec.touchedAt&&!inZone){state='triggered';reason='试仓区已经触达且当前已离开；如果当时没有执行，现在不追新仓'}
   else if(inZone||(/^TRY_/.test(action)&&!zone)){state='trial';reason='试仓条件到位，可按规则小仓尝试'}
   else if(near){state='near';reason='已接近试仓区，开始重点观察'}
-  else if(/^PREPARE_/.test(action)&&confirm){state='waiting';reason='方向明确，但确认价格尚未触发'}
+  else if(/^PREPARE_/.test(action)&&confirm&&pricePastConfirm&&!setup?.allowChase){state='waiting';reason='实时价虽已越过确认价，但最新分析尚未给出收盘确认；禁止追价，继续等回踩/反抽试仓区'}
+  else if(/^PREPARE_/.test(action)&&confirm){state='waiting';reason='方向明确，等待触发周期收盘确认；盘中刺穿不算'}
   else if(zone){state='waiting';reason='试仓位置明确，等待价格到位'}
   else if(!dir){state='waiting';reason='当前没有明确可执行方向'}
   saveLifeRecord(key,rec);return {state,reason,rec,key,chain};
@@ -717,7 +722,7 @@ function renderLifecycle(e,text,d){
   const idx=order.indexOf(active);document.querySelectorAll('#lifecycleTrack .life-step').forEach((el,i)=>{el.className='life-step';if(i<idx)el.classList.add('done');if(i===idx){el.classList.add('active');if(setup.dir)el.classList.add(setup.dir);if(terminal)el.classList.add('terminal')}});
   const labels={waiting:'等待到位',near:'接近机会区',trial:'试仓条件已到',confirmed:'确认入场已触发',triggered:'试仓已触发',invalid:'计划已失效',cancelled:'计划已明确取消',expired:'信号已过期',target:'目标已触及','no-trade':'明确不参与'};
   $('lifeHeadline').textContent=labels[life.state]||life.state;$('lifeReason').textContent=life.reason;
-  if(setup.dir&&setup.zone){$('trialControl').textContent=`${setup.dir==='long'?'做多':'做空'} · ${zoneText(setup.zone)}`;$('trialControl').className=setup.status==='in-zone'?'go':setup.status==='near'?'near':'wait';$('trialControlSub').textContent=setup.status==='in-zone'?'当前位置已在试仓区':setup.status==='near'?'已经接近，准备盯盘':tradeSetupDistance(setup,lastPrice)}else{$('trialControl').textContent='暂无明确试仓';$('trialControl').className='off';$('trialControlSub').textContent='没有明确试仓区时不强行给入场'}
+  if(setup.dir&&setup.zone){$('trialControl').textContent=`${setup.dir==='long'?'做多':'做空'} · ${zoneText(setup.zone)}`;$('trialControl').className=setup.status==='in-zone'?'go':setup.status==='near'?'near':'wait';$('trialControlSub').textContent=setup.status==='confirmed'?'试仓计划已升级为确认入场':setup.status==='in-zone'?'当前位置已在试仓区':setup.status==='near'?'已经接近，准备盯盘':tradeSetupDistance(setup,lastPrice)}else{$('trialControl').textContent='暂无明确试仓';$('trialControl').className='off';$('trialControlSub').textContent='没有明确试仓区时不强行给入场'}
   const cp=setup.confirmPrice;$('confirmControl').textContent=cp?`${setup.dir==='short'?'跌破':'站上'} ${formatPrice(cp)}`:(setup.signal?.trigger||setup.condition||'等待确认条件');$('confirmControlSub').textContent=life.state==='confirmed'?'确认条件已经触发':'与试仓分开判断，未确认前不当成正式入场';
   const chase=setup.allowChase===true;$('chaseControl').textContent=chase?'允许':'禁止';$('chaseControl').className=chase?'yes':'no';$('chaseControlSub').textContent=chase?'仅按最新结构化信号':'默认不追；错过试仓区就放弃追价';
   const ev=setup.signal?.evidence||{};const items=[['位置',ev.location],['共振',ev.resonance],['换手',ev.turnover],['空间',ev.room]];$('evidenceRow').innerHTML=items.map(([k,v])=>`<span class="evidence-chip ${evidenceClass(v)}"><i></i>${k} · ${evidenceText(v)}</span>`).join('');
@@ -726,8 +731,8 @@ function renderLifecycle(e,text,d){
   return life;
 }
 
-function tradeSetupDistance(setup,price){if(!setup||!setup.zone||!price)return '--';if(price>=setup.zone.lo&&price<=setup.zone.hi)return '当前已进入试仓区';const edge=price<setup.zone.lo?setup.zone.lo:setup.zone.hi;return `距离试仓区 ${fmtDist(edge,price)}`}
-function setupAction(setup){if(!setup||!setup.dir)return {label:'暂无明确试仓',cls:'wait'};if(setup.status==='in-zone')return {label:setup.dir==='long'?'可尝试轻仓做多':'可尝试轻仓做空',cls:setup.dir==='long'?'try-long':'try-short'};if(setup.status==='near')return {label:setup.dir==='long'?'接近多头试仓区':'接近空头试仓区',cls:'near'};return {label:setup.dir==='long'?'等待到多头试仓区':'等待到空头试仓区',cls:'wait'}}
+function tradeSetupDistance(setup,price){if(!setup||!setup.zone||!price)return '--';if(price>=setup.zone.lo&&price<=setup.zone.hi)return '当前已进入试仓区';const edge=price<setup.zone.lo?setup.zone.lo:setup.zone.hi,gap=fmtDist(edge,price);if(setup.dir==='long'&&price>setup.zone.hi)return `等待回踩 · 距试仓区 ${gap}`;if(setup.dir==='short'&&price<setup.zone.lo)return `等待反抽 · 距试仓区 ${gap}`;return `距离试仓区 ${gap}`}
+function setupAction(setup,price=lastPrice){if(!setup||!setup.dir)return {label:'暂无明确试仓',cls:'wait'};if(setup.status==='confirmed')return {label:setup.dir==='long'?'多头确认入场已触发':'空头确认入场已触发',cls:setup.dir==='long'?'try-long':'try-short'};if(setup.status==='in-zone')return {label:setup.dir==='long'?'可尝试轻仓做多':'可尝试轻仓做空',cls:setup.dir==='long'?'try-long':'try-short'};if(setup.status==='near')return {label:setup.dir==='long'?'接近多头试仓区':'接近空头试仓区',cls:'near'};if(price&&setup.zone&&setup.dir==='long'&&price>setup.zone.hi)return {label:'等待回踩多头试仓区',cls:'wait'};if(price&&setup.zone&&setup.dir==='short'&&price<setup.zone.lo)return {label:'等待反抽空头试仓区',cls:'wait'};return {label:setup.dir==='long'?'等待到多头试仓区':'等待到空头试仓区',cls:'wait'}}
 function deriveDecision(e){
   if(!e)return {state:'暂无数据',cls:'state-neutral',bias:'结构判断 --',summary:'当前日期没有可读取的分析。',trigger:'--',watch:'--',avoid:'--',longScore:0};
   const t=(e.summary||'')+' '+(e.body||'');
@@ -738,6 +743,8 @@ function deriveDecision(e){
   let state,cls;
   const sa=setup.signal?.action||'';
   if(sa==='NO_TRADE'){state='明确不参与';cls='state-neutral'}
+  else if(sa==='CONFIRM_LONG'){state='确认入场 · 做多';cls='state-long'}
+  else if(sa==='CONFIRM_SHORT'){state='确认入场 · 做空';cls='state-short'}
   else if(setup.status==='in-zone'&&setup.dir==='long'){state='试仓机会 · 做多';cls='state-long'}
   else if(setup.status==='in-zone'&&setup.dir==='short'){state='试仓机会 · 做空';cls='state-short'}
   else if(setup.status==='near'){state='接近试仓区';cls='state-wait'}
@@ -912,16 +919,16 @@ function updateQuickBrief(text,d,plan,meta){
     else if(lastPrice&&plan.shortTrig){hint='重点盯下方关键位是否失守确认'}
     $('currentZoneHint').textContent=hint;
   }
-  const noTrade=setup.status!=='in-zone'&&(/先不动手|先观察|等待/.test(action)||executionScore(text,d)<55);$('noTradeBanner').classList.toggle('show',noTrade);
+  const noTrade=!['in-zone','confirmed'].includes(setup.status)&&(/先不动手|先观察|等待/.test(action)||executionScore(text,d)<55);$('noTradeBanner').classList.toggle('show',noTrade);
 }
 
 function updateExecutionOpportunity(text,d,plan){
   const setup=d.setup||setupFromEntry(currentEntry,text,lastPrice),box=$('executionOpportunity');if(!box)return;
-  const sa=setupAction(setup);box.className='execution-opportunity '+(setup.status==='in-zone'?(setup.dir==='long'?'long active':'short active'):setup.status==='near'?'near':'wait');
+  const sa=setupAction(setup);box.className='execution-opportunity '+(['in-zone','confirmed'].includes(setup.status)?(setup.dir==='long'?'long active':'short active'):setup.status==='near'?'near':'wait');
   $('execHeadline').textContent=setup.dir?sa.label:'最新观点没有给出明确的试仓位置';
   $('execReason').textContent=setup.dir?(setup.structured?(setup.signal?.trigger||'结构化信号已给出可执行方向/位置'):setup.source):'当前没有明确可执行试仓位置；继续等待结构化信号或清晰的试仓语句。';
   $('execZone').textContent=setup.zone?zoneText(setup.zone):'--';$('execZoneDistance').textContent=setup.zone?tradeSetupDistance(setup,lastPrice):'--';
-  $('execDirection').textContent=setup.dir==='long'?'做多':setup.dir==='short'?'做空':'--';$('execMode').textContent=setup.status==='in-zone'?'试仓条件已到位':setup.status==='near'?'非常接近，准备观察':'等待价格到位';
+  $('execDirection').textContent=setup.dir==='long'?'做多':setup.dir==='short'?'做空':'--';$('execMode').textContent=setup.status==='confirmed'?'收盘确认已完成':setup.status==='in-zone'?'试仓条件已到位':setup.status==='near'?'非常接近，准备观察':tradeSetupDistance(setup,lastPrice);
   $('execCondition').textContent=setup.condition||'--';
   let invalid='--';if(setup.invalid)invalid=formatPrice(setup.invalid);else if(setup.dir==='long'&&plan.longInvalid)invalid=formatPrice(plan.longInvalid);else if(setup.dir==='short'&&plan.shortInvalid)invalid=formatPrice(plan.shortInvalid);$('execInvalid').textContent=invalid;
   let target=setup.target;if(!target&&setup.dir==='long')target=plan.longTargets[0];if(!target&&setup.dir==='short')target=plan.shortTargets[0];$('execTarget').textContent=target?formatPrice(target):'待确认';
@@ -935,13 +942,14 @@ function updateBattlePlan(text,d,plan){
   $('longTarget1').textContent=fmt(plan.longTargets[0]);$('longTarget2').textContent=fmt(plan.longTargets[1]);$('shortTarget1').textContent=fmt(plan.shortTargets[0]);$('shortTarget2').textContent=fmt(plan.shortTargets[1]);
   $('longInvalid').textContent=plan.longInvalid?`${formatPrice(plan.longInvalid)} 下方结构破坏`:plan.invalidText;$('shortInvalid').textContent=plan.shortInvalid?`${formatPrice(plan.shortInvalid)} 上方重新转强`:plan.invalidText;
   const setup=d.setup||setupFromEntry(currentEntry,text,lastPrice);
+  const longConfirmed=setup.dir==='long'&&setup.status==='confirmed',shortConfirmed=setup.dir==='short'&&setup.status==='confirmed';
   const longReady=setup.dir==='long'&&setup.status==='in-zone',shortReady=setup.dir==='short'&&setup.status==='in-zone';
   const longNear=setup.dir==='long'&&setup.status==='near',shortNear=setup.dir==='short'&&setup.status==='near';
-  $('longPlanStatus').textContent=longReady?'试仓区已到':longNear?'接近试仓区':d.cls==='state-long'?'优先观察':'备选方案';$('longPlanStatus').className='plan-status'+(longReady?' ready-long':'');
-  $('shortPlanStatus').textContent=shortReady?'试仓区已到':shortNear?'接近试仓区':d.cls==='state-short'?'优先观察':'备选方案';$('shortPlanStatus').className='plan-status'+(shortReady?' ready-short':'');
-  $('longPlanNote').textContent=longReady?`最新观点明确给出多头试仓条件：${setup.source}`:setup.dir==='long'?`明确多头试仓区：${zoneText(setup.zone)}；当前位置${setup.status==='near'?'已接近':'尚未到位'}。`:'当前没有明确的多头试仓语句，保留确认型预案。';
-  $('shortPlanNote').textContent=shortReady?`最新观点明确给出空头试仓条件：${setup.source}`:setup.dir==='short'?`明确空头试仓区：${zoneText(setup.zone)}；当前位置${setup.status==='near'?'已接近':'尚未到位'}。`:'当前没有明确的空头试仓语句，保留确认型预案。';
-  const score=executionScore(text,d);$('planHealth').textContent=(setup.status==='in-zone'?'计划状态：试仓条件到位':setup.status==='near'?'计划状态：接近试仓区':score>=75?'计划状态：接近执行':score>=55?'计划状态：继续观察':'计划状态：等待结构成熟');
+  $('longPlanStatus').textContent=longConfirmed?'收盘确认已完成':longReady?'试仓区已到':longNear?'接近试仓区':d.cls==='state-long'?'优先观察':'备选方案';$('longPlanStatus').className='plan-status'+(longReady||longConfirmed?' ready-long':'');
+  $('shortPlanStatus').textContent=shortConfirmed?'收盘确认已完成':shortReady?'试仓区已到':shortNear?'接近试仓区':d.cls==='state-short'?'优先观察':'备选方案';$('shortPlanStatus').className='plan-status'+(shortReady||shortConfirmed?' ready-short':'');
+  $('longPlanNote').textContent=longConfirmed?`最新一轮已给出多头收盘确认：${setup.condition}`:longReady?`最新观点明确给出多头试仓条件：${setup.source}`:setup.dir==='long'?`明确多头试仓区：${zoneText(setup.zone)}；当前位置${setup.status==='near'?'已接近':'尚未到位'}。`:'当前没有明确的多头试仓语句，保留确认型预案。';
+  $('shortPlanNote').textContent=shortConfirmed?`最新一轮已给出空头收盘确认：${setup.condition}`:shortReady?`最新观点明确给出空头试仓条件：${setup.source}`:setup.dir==='short'?`明确空头试仓区：${zoneText(setup.zone)}；当前位置${setup.status==='near'?'已接近':'尚未到位'}。`:'当前没有明确的空头试仓语句，保留确认型预案。';
+  const score=executionScore(text,d);$('planHealth').textContent=(setup.status==='confirmed'?'计划状态：收盘确认完成':setup.status==='in-zone'?'计划状态：试仓条件到位':setup.status==='near'?'计划状态：接近试仓区':score>=75?'计划状态：接近执行':score>=55?'计划状态：继续观察':'计划状态：等待结构成熟');
 }
 function opportunityScore(sym,e){
   if(!e)return 5;const d=deriveDecision(e),text=(e.summary||'')+' '+(e.body||'');let score=executionScore(text,d)*.58;

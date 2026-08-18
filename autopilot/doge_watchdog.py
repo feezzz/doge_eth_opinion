@@ -1,4 +1,4 @@
-"""狗哥盯盘 — 每5分钟对齐执行，配合 watchdog.bat 持续运行"""
+"""狗哥盯盘 — 每15分钟对齐执行，配合 watchdog.bat 持续运行"""
 import subprocess, time
 from datetime import datetime
 from pathlib import Path
@@ -11,7 +11,7 @@ print(f"[watchdog] start {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", flush=
 
 while True:
     now = time.time()
-    grid = (now // 300) * 300 + 300
+    grid = (now // 900) * 900 + 900
     wait = grid + 10 - time.time()
     if wait > 0:
         time.sleep(wait)

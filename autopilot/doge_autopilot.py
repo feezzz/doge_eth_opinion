@@ -74,6 +74,8 @@ SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海�
 ## 执行计划连续性（必须严格遵守）
 - “上一轮大周期状态”里也会包含上一轮执行计划。只要旧计划没有明确失效，就默认继续沿用，不能因为本轮暂时没到位置就把 trial_zone / stop / targets 清空。
 - WAIT 只表示“当前不执行”，不等于取消旧计划。若旧计划仍有效，action 应继续使用 PREPARE_LONG / PREPARE_SHORT，并保留原 trial_zone、trigger、confirm_price、stop、targets。
+- CONFIRM_LONG / CONFIRM_SHORT 只允许在 trigger 要求的周期已经收盘确认后输出。盘中价格瞬间越过 confirm_price 不算确认；若没有收盘确认，必须继续 PREPARE。
+- 若价格已经远离试仓区且 allow_chase=false，不得因为现价越过 confirm_price 就输出 CONFIRM。应继续写成“等待回踩/反抽原试仓区”，或有新结构依据时 ADJUST 到新的试仓区。
 - 只有以下情况允许取消旧计划：主线 FLIP；价格/收盘已满足旧计划明确失效条件；或你有新的结构性依据认为旧计划不再成立。取消时必须输出 plan_change="CANCEL" 并在 plan_reason 写明原因。
 - 同一方向、同一逻辑，只是试仓区/确认价小幅调整，用 plan_change="ADJUST"；完全新的一套交易逻辑用 NEW；其余默认 KEEP。
 - 如果上一轮已有试仓计划，而本轮只是短线震荡、没有新的明确失效依据，绝不能输出 WAIT + trial_zone=null 来“遗忘”计划。
@@ -98,7 +100,7 @@ SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海�
 [[SIGNAL]]{"action":"WAIT","bias":"NEUTRAL","macro_bias":"NEUTRAL","macro_regime":"RANGE","macro_change":"KEEP","macro_strength":"WEAK","macro_thesis":"","macro_invalidation":"","tactical_bias":"NEUTRAL","entry_mode":"NONE","countertrend":false,"plan_change":"KEEP","plan_reason":"","trial_zone":null,"trigger":"","confirm_price":null,"stop":null,"targets":[],"invalidation":"","allow_chase":false,"evidence":{"location":"UNKNOWN","resonance":"UNKNOWN","turnover":"UNKNOWN","room":"UNKNOWN"}}
 
 字段约束：
-- action: TRY_LONG / TRY_SHORT / PREPARE_LONG / PREPARE_SHORT / WAIT / NO_TRADE
+- action: TRY_LONG / TRY_SHORT / PREPARE_LONG / PREPARE_SHORT / CONFIRM_LONG / CONFIRM_SHORT / WAIT / NO_TRADE
 - bias: 当前执行方向 LONG / SHORT / NEUTRAL
 - macro_bias: 大周期主线 LONG / SHORT / NEUTRAL
 - macro_regime: TREND_UP / TREND_DOWN / RANGE / TRANSITION
@@ -113,6 +115,7 @@ SYSTEM_PROMPT = """你是“狗哥(doge)”，负责 ETH、闪迪(SNDK)、SK海�
 - plan_reason: 仅在 ADJUST / CANCEL / NEW 时简短说明原因
 - trial_zone 仅在明确给出可尝试区域时填写 [低,高]；若上一轮已有且仍有效，必须继续保留
 - TRY 只代表当前价格已到试仓区；未到用 PREPARE
+- CONFIRM 代表 trigger 指定周期已经完成收盘确认，不得用实时价刺穿代替；确认后必须保留原试仓区、止损和目标，方便前端延续同一计划
 - stop/targets/confirm_price 只能使用输入中明确可依据的价格，不能自己造
 - allow_chase 默认 false
 - evidence 无依据就 UNKNOWN
@@ -289,7 +292,12 @@ def normalize_signal(signal):
     """规范化 V7 结构化信号。"""
     if not isinstance(signal, dict):
         signal = {}
-    actions = {"TRY_LONG", "TRY_SHORT", "PREPARE_LONG", "PREPARE_SHORT", "WAIT", "NO_TRADE"}
+    actions = {
+        "TRY_LONG", "TRY_SHORT",
+        "PREPARE_LONG", "PREPARE_SHORT",
+        "CONFIRM_LONG", "CONFIRM_SHORT",
+        "WAIT", "NO_TRADE",
+    }
     biases = {"LONG", "SHORT", "NEUTRAL"}
     regimes = {"TREND_UP", "TREND_DOWN", "RANGE", "TRANSITION"}
     changes = {"KEEP", "STRENGTHEN", "WEAKEN", "FLIP"}
@@ -433,6 +441,17 @@ def merge_execution_plan(previous_state, signal):
             signal["countertrend"] = True
         signal["plan_change"] = "KEEP"
         signal["plan_reason"] = signal.get("plan_reason") or "本轮未出现取消依据，沿用上一轮执行计划"
+    elif signal.get("action") in {"CONFIRM_LONG", "CONFIRM_SHORT"}:
+        # 收盘确认是旧计划的升级阶段，不是全新计划；模型漏字段时仍需保留原试仓链路。
+        signal["bias"] = prev_dir
+        signal["trial_zone"] = prev_zone
+        signal["trigger"] = signal.get("trigger") or prev.get("trigger", "")
+        signal["confirm_price"] = signal.get("confirm_price") or prev.get("confirm_price")
+        signal["stop"] = signal.get("stop") or prev.get("stop")
+        signal["targets"] = signal.get("targets") or prev.get("targets", [])
+        signal["invalidation"] = signal.get("invalidation") or prev.get("invalidation", "")
+        signal["entry_mode"] = signal.get("entry_mode") if signal.get("entry_mode") != "NONE" else prev.get("entry_mode", "NONE")
+        signal["plan_change"] = "KEEP" if change == "KEEP" else change
     return signal
 
 

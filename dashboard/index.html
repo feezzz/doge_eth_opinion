@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>狗哥行情决策看板 V7.1 · 计划连续版</title>
+<title>狗哥行情决策看板 V7.2 · 计划连续版</title>
 <style>
 :root{
   --bg:#090c10;--panel:#0f141a;--panel2:#121820;--line:#202833;--line2:#293442;
@@ -316,7 +316,7 @@ body{font-size:15px;line-height:1.58}
 <div class="app">
   <div class="trigger-flash" id="triggerFlash"><b id="triggerFlashTitle">信号触发</b><span id="triggerFlashText"></span></div>
   <header class="topbar">
-    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + 闪迪 + 海力士 + 镁光 · V7.1 计划连续版</small></div></div>
+    <div class="brand"><div class="brand-mark">狗</div><div><h1>狗哥行情决策看板</h1><small>ETH + 闪迪 + 海力士 + 镁光 · V7.2 计划连续版</small></div></div>
     <div class="live-strip"><span class="live-dot"></span><span class="live-symbol" id="liveSymbol">ETH · ETHUSDT</span><span class="live-price" id="livePrice">--</span><span class="live-change" id="liveChange">--</span></div>
     <div class="top-meta"><span class="top-stat rt-state warn" id="realtimeState"><i></i><span>实时：连接中</span></span><span class="top-stat" id="genTime">数据 --</span><span class="top-stat" id="statLine">--</span><div class="pos-box" id="posWidget"></div></div>
   </header>
@@ -358,7 +358,7 @@ body{font-size:15px;line-height:1.58}
         </div>
       </section>
       <section class="macro-panel" id="macroPanel">
-        <div class="macro-head"><div><h2>大周期主线</h2><p>1D / 4H 决定方向，2H / 1H 判断延续或回调；30m 以下只负责找入场，不允许随意翻转主线。</p></div><span class="macro-anchor">V7.1 · 主线 + 计划连续</span></div>
+        <div class="macro-head"><div><h2>大周期主线</h2><p>1D / 4H 决定方向，2H / 1H 判断延续或回调；30m 以下只负责找入场，不允许随意翻转主线。</p></div><span class="macro-anchor">V7.2 · 主线 + 计划连续</span></div>
         <div class="macro-grid">
           <div class="macro-card macro-main neutral" id="macroMainCard"><b>1D / 4H 主线</b><strong id="macroBias">读取中</strong><p id="macroThesis">等待新版结构化大周期信号。</p><span class="macro-regime" id="macroRegime">市场阶段 --</span></div>
           <div class="macro-card tactical"><b>2H / 1H 当前阶段</b><strong id="tacticalBias">--</strong><p id="tacticalNote">判断是顺势延续、回调还是反弹。</p></div>
@@ -590,7 +590,7 @@ function setupFromEntry(e,text,price){
   if(!s)return {...extractTradeSetup(text,price),structured:false,signal:null};
   if(s.planChange==='CANCEL')return {dir:null,zone:null,status:'none',distancePct:null,condition:s.planReason||'上一轮计划已明确取消',source:'结构化信号',context:'',score:0,invalid:null,target:null,targets:[],structured:true,cancelled:true,signal:s,confirmPrice:null,allowChase:false,invalidation:s.invalidation};
   let dir=null;if(/LONG/.test(s.action))dir='long';else if(/SHORT/.test(s.action))dir='short';else if(s.bias==='LONG'&&/^PREPARE/.test(s.action))dir='long';else if(s.bias==='SHORT'&&/^PREPARE/.test(s.action))dir='short';
-  // V7.1：WAIT + trial_zone=null 不再自动清空。先尝试从最近 12 轮中恢复同一大周期下的有效执行计划。
+  // V7.2：WAIT + trial_zone=null 不再自动清空。先尝试从最近 12 轮中恢复同一大周期下的有效执行计划。
   if(!dir&&!s.zone&&s.action==='WAIT'){
     const inherited=recentStructuredPlanFallback(e,s,price);if(inherited)return inherited;
   }
@@ -864,7 +864,7 @@ function directionalPlan(text,dir){
   return dir==='long'?'关键压力收盘站稳后，再等回踩/换手确认，不追第一根。':'关键支撑收盘失守后，再等反抽不过/换手确认，不在支撑上追空。';
 }
 function formatPrice(v){if(v===null||v===undefined||!Number.isFinite(+v))return '--';return (+v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
-function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V7.1 计划连续版`}
+function updateInstrumentUI(){const sym=curSym||'ETHUSDT',m=symMeta(sym);if($('liveSymbol'))$('liveSymbol').textContent=`${m.name} · ${sym}`;if($('chartTitle'))$('chartTitle').textContent=`${m.name} ${m.code} · ${sym} K 线`;document.title=`${m.name}｜狗哥行情决策看板 V7.2 计划连续版`}
 function nearestLevels(price,levels){
   if(!price||!levels.length)return {res:null,sup:null};
   const vals=levels.map(x=>x.v).filter(Number.isFinite);

@@ -128,7 +128,7 @@ def run_klines(symbol):
     """运行 doge_klines.py --align --symbol SYMBOL，返回 (stdout, stderr)。"""
     proc = subprocess.run(
         ["python", "-X", "utf8", KLINES_SCRIPT, "--align", "--symbol", symbol],
-        capture_output=True, text=True, encoding="utf-8", timeout=120
+        capture_output=True, text=True, encoding="utf-8", timeout=400
     )
     if proc.returncode != 0:
         log(f"[autopilot] {symbol} klines 失败: {proc.stderr[:200]}")

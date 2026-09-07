@@ -78,7 +78,7 @@ def main():
     period_str = ""
     expected_5m = ""
     if align:
-        grid = round(time.time() / 300) * 300
+        grid = int(time.time() // 300) * 300
         wait = grid + 10 - time.time()
         if wait > 0:
             time.sleep(wait)

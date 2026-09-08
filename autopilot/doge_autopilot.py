@@ -260,7 +260,7 @@ K线数据（按 1D→4H→2H→1H→30m→15m→5m 排列）:
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.45,
-        "max_tokens": 1000
+        "max_tokens": 8000  # v4-flash 推理模型会先消费推理 token，1000 上限导致 content 为空(全 1000 都花在 reasoning 上)
     }
 
     req = urllib.request.Request(
